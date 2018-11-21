@@ -1,26 +1,23 @@
 # Import libs
 import pandas as pd
 import numpy as np
+import os
 from requests import get
-from time import time
 from time import sleep
 from random import randint
 from bs4 import BeautifulSoup
 import bs4
-import dateparser
 
 from warnings import warn
-from IPython.core.display import clear_output
-import traceback
+from time import time
 
 
 # Function to scrape the movies urls from http://www.allocine.fr/films/
 # Choose the page range with the two parameters start_page and end_page.
 # The url list is save as a csv file: movie_url.csv
-def getMoviesUrl(start_page, end_page):
+def getMoviesUrl(start_page, end_page, path='data/allocine/url/'):
     # Set the list
-    movie_id = []
-    p_requests = start_page
+    movies_list = []
     movies_number = 0
     for p in range(start_page, end_page + 1):
         # Get request
@@ -32,7 +29,7 @@ def getMoviesUrl(start_page, end_page):
 
         # Warning for non-200 status codes
         if response.status_code != 200:
-            warn('Page Request: {}; Status code: {}'.format(p_requests, response.status_code))
+            warn('Page Request: {}; Status code: {}'.format(p, response.status_code))
 
         # Parse the content of the request with BeautifulSoup
         html_soup = BeautifulSoup(response.text, 'html.parser')
@@ -44,20 +41,33 @@ def getMoviesUrl(start_page, end_page):
         for movie in movies:
             url = (movie.a['href'])
             id = url[url.find('=') + 1: -5]
-            movie_id.append(id)
-
+            row = {'id': id, 'page': p}
+            movies_list.append(row)
     # Saving the files
-    r = np.asarray(movie_id)
-    np.savetxt("movie_url.csv", r, delimiter=",", fmt='%s')
+    data = pd.DataFrame(data=movies_list)
+    path = path + '{}_{}.csv'.format(start_page, end_page)
+    data.to_csv(path_or_buf=path)
 
 
-# a = getMoviesUrl(0, 0)
+# t1 = time()
+# a = getMoviesUrl(1, 15)
+# print(time() - t1)
+# fetches 20 000 id/hour
+
+def chunks_movie_url(start_page, end_page, chunksize=20, path='data/allocine/url/'):
+    """
+    Wrapping of the previous method in one that does chunks to avoid loosing info
+    """
+    indexes = [(i, i + chunksize - 1) for i in range(start_page, end_page, chunksize)]
+    for start_page, end_page in indexes:
+        getMoviesUrl(start_page, end_page, path=path)
+        print('processed {} pages'.format(start_page))
 
 
-#
-# print(a)
-
-# m_url = pd.read_csv("movie_url.csv")
+# t1 = time()
+# chunks_movie_url(1, 100)
+# print(time() - t1)
+# same rate
 
 
 def get_reviews_press(url, threshold=10):
@@ -131,7 +141,7 @@ def get_reviews_spectator(url, threshold=10):
         # check if it is a review, parse the content, put it in a tuple
         if isinstance(child, bs4.element.Tag):
             test = child.find(class_='content-txt')
-            if test == None:
+            if test is None:
                 continue
             review = str(test.string)
             review_rating = (child.find(class_='stareval-note').string.strip().replace(',', '.'))
@@ -146,7 +156,14 @@ def get_reviews_spectator(url, threshold=10):
 # print(reviews)
 
 
-def process_movie_list(movie_list):
+def process_movie_list(movie_list, page, output_path='data/allocine/data/'):
+    """
+
+    :param movie_list:
+    :param page:
+    :param output_path:
+    :return:
+    """
     # init list to save errors
     errors = []
     data = []
@@ -168,12 +185,35 @@ def process_movie_list(movie_list):
             errors.append(id)
     c = ['id', 'review', 'rating']
     df = pd.DataFrame(columns=c, data=data)
-    df.to_csv("allocine_movies.csv")
+    df.to_csv(output_path + "movies" + str(page) + ".csv")
     errors = pd.DataFrame(errors)
-    errors.to_csv("allocine_errors.csv")
+    errors.to_csv(output_path + "errors.csv", mode='a')
     return df, errors
 
+
 # Load the list of urls
-# m_url = pd.read_csv("movie_url.csv")
-# df, error = process_movie_list(['2352'])
+# df, error = process_movie_list(['2352, 2485'])
 # print(df)
+
+
+def process_all_fetched(start_page, end_page):
+    input_dir = 'data/allocine/url/'
+    for csv_name in sorted(os.listdir(input_dir)):
+        # only fetch between the required urls
+        start_csv, end_csv = int(csv_name[0:csv_name.find('_')]), \
+                             int(csv_name[csv_name.find('_') + 1:csv_name.find('.')])
+        if end_csv >= start_page and start_csv <= end_page:
+            data = pd.read_csv(input_dir + csv_name, usecols=['id', 'page'])
+            data_grouped = data.groupby('page')
+            for page, data in data_grouped:
+                if start_page <= page <= end_page:
+                    movie_list = data['id'].values
+                    process_movie_list(movie_list, page)
+            print('processed {}'.format(csv_name))
+
+
+t1 = time()
+process_all_fetched(1, 1)
+print(time() - t1)
+
+# done 10 pages (approx 1500 reviews) in 222s
