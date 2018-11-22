@@ -18,7 +18,7 @@ def read_json(fnames):
         with open(fname) as f:
             # Read lines one by one
             for line in f:
-                # Retrieve dictionnaries from json
+                # Retrieve dictionaries from json
                 tweets.extend([json.loads(line)])
     return tweets
 
@@ -42,8 +42,8 @@ def generate_df(tweets,df_col,tweet_label):
 if __name__ == "__main__":
     
     # Parameters
-    fnames      = ['../data/twitter_en_10000_all_0.json'] # Names of the files to read
-#                   '../data/twitter_fr_1000_macron_0.json']    
+    fnames      = ['data/twitter_en_10000_all_0.json'] # Names of the files to read
+#                   'data/twitter_fr_1000_macron_0.json']
     df_col      = ['Date','Tweet']          # Name of the columns of the dataframe
     tweet_label = [['created_at'],['text']] # Name of the corresponding labels
     

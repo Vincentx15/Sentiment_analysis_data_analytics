@@ -15,15 +15,23 @@ def complete_filename(file,query,lang,max_tweets,min_age):
     Complete the filename by adding the folder, the extansion, etc
     '''
     if query == "*":
-        return '../data/'+file+'_'+lang+'_'+str(max_tweets)+'_'+'all'+'_'+str(min_age)+'.json'
+        return 'data/'+file+'_'+lang+'_'+str(max_tweets)+'_'+'all'+'_'+str(min_age)+'.json'
     else:
-        return '../data/'+file+'_'+lang+'_'+str(max_tweets)+'_'+query+'_'+str(min_age)+'.json'
+        return 'data/'+file+'_'+lang+'_'+str(max_tweets)+'_'+query+'_'+str(min_age)+'.json'
 
-def load_api(consumer_key,consumer_secret,access_token,access_secret):
+def load_api(fname):
     '''
-    Load twitter's api
+    Read the keys from a txt file and load twitter's api
     '''
-    # Authentification in Twitter
+    # Read the keys
+    keys = []
+    with open(fname) as f:
+        # Read keys one by one
+        for line in f:
+            keys.extend([line])
+    [consumer_key,consumer_secret,access_token, access_secret] = keys
+
+    # Authentication in Twitter
     auth = tweepy.OAuthHandler(consumer_key,consumer_secret)
     auth.set_access_token(access_token, access_secret)
     
@@ -70,31 +78,24 @@ def handle_error(Cursor):
             for t in range(3):
                 time.sleep(5*60)
                 print("{}/15...".format((t+1)*5))
-    return
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     
     # Parameters
-    file        = "twitter"     # No need to specify the folder or the file extension
-    query       = "*"           # Query ("*" means everything)
-    lang        = "fr"          # Language in the query
-    max_tweets  = 10000         # Max number of tweets
-    min_age     = 0             # Min age of the tweets in days (0 means most recent tweets)
-    
-    # Keys of Twitter's app
-    consumer_key    = "b2gx16ZXtaO2ty53ThKz2nbBG"
-    consumer_secret = "eQC7d2z709w6yKUUifMUzG275TixLKce9i7fYki27wEx2fIlGx"
-    access_token    = "1062483187719421952-jvkpMyAfXQLlJXJGRDak5Ec67g27nP"
-    access_secret   = "57G5UzqYjggE7AoMuU4xt1nyHpUsYkgvQd65jCB2QdfNk"
-    
+    file = "twitter"        # No need to specify the folder or the file extension
+    query = "*"             # Query ("*" means everything)
+    lang  = "fr"            # Language in the query
+    max_tweets = 10000      # Max number of tweets
+    min_age = 0             # Min age of the tweets in days (0 means most recent tweets)
+
     # Complete the filename
     fname = complete_filename(file,query,lang,max_tweets,min_age)
     
     # Load twitter's api
-    api = load_api(consumer_key,consumer_secret,access_token,access_secret)
+    api = load_api('data/twitter_keys.txt')
     
-    # Seach tweets specified by the query
+    # Search tweets specified by the query
     tweets = search_tweets(api,query,lang,max_tweets,min_age)
     
     # Write the tweets in a json file
