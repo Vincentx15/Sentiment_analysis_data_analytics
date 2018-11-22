@@ -1,6 +1,5 @@
 # Import libs
 import pandas as pd
-import numpy as np
 import os
 from requests import get
 from time import sleep
@@ -212,8 +211,24 @@ def process_all_fetched(start_page, end_page):
             print('processed {}'.format(csv_name))
 
 
-t1 = time()
-process_all_fetched(1, 1)
-print(time() - t1)
+# t1 = time()
+# process_all_fetched(1, 2)
+# print(time() - t1)
+
 
 # done 10 pages (approx 1500 reviews) in 222s
+
+def get_data():
+    """
+    load all reviews in a big csv
+    :return: Dataframe
+    """
+    input_dir = 'data/allocine/data/'
+    data = []
+    for csv in os.listdir(input_dir):
+        if csv != 'errors.csv':
+            df = pd.read_csv(input_dir + csv, usecols=['id', 'review', 'rating'])
+            data.append(df)
+    return pd.concat(data, axis=0)
+
+print(get_data())
