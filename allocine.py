@@ -60,12 +60,12 @@ def chunks_movie_url(start_page, end_page, chunksize=20, path='data/allocine/url
     indexes = [(i, i + chunksize - 1) for i in range(start_page, end_page, chunksize)]
     for start_page, end_page in indexes:
         getMoviesUrl(start_page, end_page, path=path)
-        print('processed {} pages'.format(start_page))
+        print('processed {} pages'.format(end_page))
 
 
-# t1 = time()
-# chunks_movie_url(1, 100)
-# print(time() - t1)
+t1 = time()
+chunks_movie_url(1, 1000)
+print(time() - t1)
 # same rate
 
 
@@ -155,13 +155,13 @@ def get_reviews_spectator(url, threshold=10):
 # print(reviews)
 
 
-def process_movie_list(movie_list, page, output_path='data/allocine/data/'):
+def process_movie_list(movie_list, page, output_path='data/allocine/data/', threshold = 10):
     """
-
-    :param movie_list:
-    :param page:
-    :param output_path:
-    :return:
+    Given a list of ids,
+    :param movie_list: list of ids
+    :param page: page from which the ids where fetched
+    :param output_path: where to save the extracted data
+    :return: (result df, error dataframe)
     """
     # init list to save errors
     errors = []
@@ -173,8 +173,8 @@ def process_movie_list(movie_list, page, output_path='data/allocine/data/'):
             spectator_url = 'http://www.allocine.fr/film/fichefilm-{}/critiques/spectateurs/'.format(id)
             press_url = 'http://www.allocine.fr/film/fichefilm-{}/critiques/presse/'.format(id)
 
-            items = get_reviews_spectator(spectator_url)
-            items += get_reviews_press(press_url)
+            items = get_reviews_spectator(spectator_url, threshold)
+            items += get_reviews_press(press_url, threshold)
             if not items:
                 continue
             for text, rating in items:
@@ -195,19 +195,24 @@ def process_movie_list(movie_list, page, output_path='data/allocine/data/'):
 # print(df)
 
 
-def process_all_fetched(start_page, end_page):
+def process_all_fetched(start_page, end_page, threshold = 10):
+    """
+    Process all url fetched in the url/ directory that have pages in the given range
+    """
     input_dir = 'data/allocine/url/'
     for csv_name in sorted(os.listdir(input_dir)):
-        # only fetch between the required urls
+        # only fetch csv that have pages between the requested ones
         start_csv, end_csv = int(csv_name[0:csv_name.find('_')]), \
                              int(csv_name[csv_name.find('_') + 1:csv_name.find('.')])
         if end_csv >= start_page and start_csv <= end_page:
+            # if some pages are interesting, read the csv and compute the relevant pages
             data = pd.read_csv(input_dir + csv_name, usecols=['id', 'page'])
             data_grouped = data.groupby('page')
+            # process page
             for page, data in data_grouped:
                 if start_page <= page <= end_page:
                     movie_list = data['id'].values
-                    process_movie_list(movie_list, page)
+                    process_movie_list(movie_list, page, threshold=threshold)
             print('processed {}'.format(csv_name))
 
 
@@ -231,4 +236,4 @@ def get_data():
             data.append(df)
     return pd.concat(data, axis=0)
 
-print(get_data())
+# print(get_data())

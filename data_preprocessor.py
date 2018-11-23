@@ -17,7 +17,7 @@ def create_vectorizer(data, stopwords, ngram=(1, 1)):
     """
     vectorizer = CountVectorizer(input='content ', analyzer='word',
                                  ngram_range=ngram
-                                 , stop_words=stop_words_fr)
+                                 , stop_words=stopwords)
     vectorizer.fit(data)
     return vectorizer
 
