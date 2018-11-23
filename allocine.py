@@ -63,9 +63,9 @@ def chunks_movie_url(start_page, end_page, chunksize=20, path='data/allocine/url
         print('processed {} pages'.format(end_page))
 
 
-t1 = time()
-chunks_movie_url(1, 1000)
-print(time() - t1)
+# t1 = time()
+# chunks_movie_url(1, 20)
+# print(time() - t1)
 # same rate
 
 
@@ -155,7 +155,7 @@ def get_reviews_spectator(url, threshold=10):
 # print(reviews)
 
 
-def process_movie_list(movie_list, page, output_path='data/allocine/data/', threshold = 10):
+def process_movie_list(movie_list, page, output_path='data/allocine/data/', threshold=10):
     """
     Given a list of ids,
     :param movie_list: list of ids
@@ -195,12 +195,12 @@ def process_movie_list(movie_list, page, output_path='data/allocine/data/', thre
 # print(df)
 
 
-def process_all_fetched(start_page, end_page, threshold = 10):
+def process_all_fetched(start_page, end_page, threshold=10):
     """
     Process all url fetched in the url/ directory that have pages in the given range
     """
     input_dir = 'data/allocine/url/'
-    for csv_name in sorted(os.listdir(input_dir)):
+    for csv_name in sorted(os.listdir(input_dir), key=lambda x: int(x[:x.find('_')])):
         # only fetch csv that have pages between the requested ones
         start_csv, end_csv = int(csv_name[0:csv_name.find('_')]), \
                              int(csv_name[csv_name.find('_') + 1:csv_name.find('.')])
@@ -216,9 +216,9 @@ def process_all_fetched(start_page, end_page, threshold = 10):
             print('processed {}'.format(csv_name))
 
 
-# t1 = time()
-# process_all_fetched(1, 2)
-# print(time() - t1)
+t1 = time()
+process_all_fetched(500, 1002)
+print(time() - t1)
 
 
 # done 10 pages (approx 1500 reviews) in 222s
@@ -235,5 +235,4 @@ def get_data():
             df = pd.read_csv(input_dir + csv, usecols=['id', 'review', 'rating'])
             data.append(df)
     return pd.concat(data, axis=0)
-
 # print(get_data())
