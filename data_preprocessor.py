@@ -52,7 +52,7 @@ print(res.shape)
 '''
 Classifier
 '''
-from classifier import train_classifier, predict_classifier
+from classifier import train_classifier, predict_classifier, rmse
 
 Classifier = "NN"
 Measure = "RMSE"
@@ -66,6 +66,8 @@ Parameters = {'NN_input_dim': 1681,
               'batch_size': 32}
 
 clf = train_classifier(Classifier, res, labels, Parameters)
+error = rmse(clf.predict(res), labels)
+print('rmse = ', error)
 
 test = ['terrible movie. it was really great, do not go and see it',
         'Amazing movie, I loved seeing it. It was very fun. The actors play very well']

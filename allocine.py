@@ -217,8 +217,9 @@ def process_all_fetched(start_page, end_page, threshold=10):
 
 
 t1 = time()
-process_all_fetched(500, 1002)
+process_all_fetched(501, 1002)
 print(time() - t1)
+# 12395s for 500 pages
 
 
 # done 10 pages (approx 1500 reviews) in 222s
