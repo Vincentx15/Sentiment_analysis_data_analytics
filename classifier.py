@@ -37,7 +37,7 @@ Parameters = {
              'dropout': 0.2,
              'loss': 'mean_squared_error',
              'optimizer': 'adam',
-             'metrics': ['categorical_accuracy'],
+             'metrics': ['mean_squared_error'],
              'epochs': 3,
              'batch_size': 1
              }
@@ -50,7 +50,7 @@ def train_classifier(classifier, x_train, y_train, parameters=None):
     :param classifier: string, define which classifier to use
     :param x_train: array, train set
     :param y_train: array, label set
-    :param parameters: dictionnary, define which parameter to use
+    :param parameters: dictionary, define which parameter to use
     :return: trained classifier
     """
 
@@ -154,7 +154,7 @@ def save_classifier(classifier, model, fname):
     if classifier == "SVM":
         dump(model, fname + '.joblib')
 
-    elif (classifier == "NN") or (classifier == "LSTM"):
+    elif classifier in ["NN", "LSTM"]:
         model.save(fname + '.h5')
 
     else:
@@ -171,7 +171,7 @@ def load_classifier(classifier, fname):
     if classifier == "SVM":
         return load(fname + '.joblib')
 
-    elif (classifier == "NN") or (classifier == "LSTM"):
+    elif classifier in ["NN", "LSTM"]:
         return load_model(fname + '.h5')
 
     else:
