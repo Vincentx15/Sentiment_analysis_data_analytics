@@ -6,13 +6,45 @@ Created on Mon Nov 19 17:28:23 2018
 """
 
 import numpy as np
-import math as m
+from joblib import dump, load
 from sklearn import svm
-from keras.models import Sequential
-from keras.layers import Dense
+from sklearn.metrics import accuracy_score, mean_squared_error
+from keras.models import Sequential, load_model
+from keras.layers import Dense, Dropout, LSTM
 
 
-def train_classifier(classifier, x_train, y_train, parameters = None):
+# Default parameters
+Classifier = "LSTM"             # String, can be SVM, NN or LSTM
+Measure = "MSE"                 # String, can be RMSE or accuracy
+Fname = "data/model/model1"     # String, name of the file to save/load with no extension
+
+Parameters = {
+    'SVM': None,
+    'NN': {'input_dim': 10,                             # Int
+           'layers': [8, 4, 1],                         # List of int
+           'activations': ['relu', 'relu', 'relu'],     # List of strings
+           'dropout': 0.5,                              # Float
+           'loss': 'mean_squared_error',                # String
+           'optimizer': 'sgd',                          # String
+           'epochs': 10,                                # Int
+           'batch_size': 1                              # Int
+           },
+    'LSTM': {'input_shape': (10, 3),
+             'cells': 2,
+             'units': [2,1],
+             'return_sequences': [True, False],
+             'activation': 'tanh',
+             'dropout': 0.2,
+             'loss': 'mean_squared_error',
+             'optimizer': 'adam',
+             'metrics': ['categorical_accuracy'],
+             'epochs': 3,
+             'batch_size': 1
+             }
+}
+
+
+def train_classifier(classifier, x_train, y_train, parameters=None):
     """
     Return a classifier with the specified parameters trained on x_train and y_train
     :param classifier: string, define which classifier to use
@@ -29,22 +61,50 @@ def train_classifier(classifier, x_train, y_train, parameters = None):
 
     elif classifier == "NN":
         try:
-            input_dim = parameters['NN_input_dim']
-            layers = parameters['NN_layers']
-            activations = parameters['NN_activations']
-            loss = parameters['NN_loss']
-            optimizer = parameters['NN_optimizer']
-            epochs = parameters['epochs']
-            batch_size = parameters['batch_size']
+            input_dim = parameters[classifier]['input_dim']
+            layers = parameters[classifier]['layers']
+            activations = parameters[classifier]['activations']
+            dropout = parameters[classifier]['dropout']
+            loss = parameters[classifier]['loss']
+            optimizer = parameters[classifier]['optimizer']
+            epochs = parameters[classifier]['epochs']
+            batch_size = parameters[classifier]['batch_size']
         except TypeError:
             raise ValueError("Parameters not defined")
 
         model = Sequential()
         model.add(Dense(units=layers[0], activation=activations[0], input_dim=input_dim))
         for i in range(1, len(layers)):
+            if dropout != 0:
+                model.add(Dropout(dropout))
             model.add(Dense(units=layers[i], activation=activations[i]))
 
         model.compile(loss=loss, optimizer=optimizer)
+        model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size)
+        return model
+
+    elif classifier == "LSTM":
+        try:
+            input_shape = parameters[classifier]['input_shape']
+            cells = parameters[classifier]['cells']
+            units = parameters[classifier]['units']
+            return_sequences = parameters[classifier]['return_sequences']
+            activation = parameters[classifier]['activation']
+            dropout = parameters[classifier]['dropout']
+            loss = parameters[classifier]['loss']
+            optimizer = parameters[classifier]['optimizer']
+            metrics = parameters[classifier]['metrics']
+            epochs = parameters[classifier]['epochs']
+            batch_size = parameters[classifier]['batch_size']
+        except TypeError:
+            raise ValueError("Parameters not defined")
+
+        model = Sequential()
+        model.add(LSTM(input_shape=input_shape, units=units[0], activation=activation, dropout=dropout, return_sequences=return_sequences[0]))
+        for i in range(1, cells):
+            model.add(LSTM(units=units[i], activation=activation, dropout=dropout, return_sequences=return_sequences[i]))
+
+        model.compile(loss=loss, optimizer=optimizer, metrics=metrics)
         model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size)
         return model
 
@@ -71,50 +131,83 @@ def evaluate_classifier(model, measure, x_test, y_test):
     :param y_test: true data
     :return: score or error
     """
-    if measure == "RMSE":
+    if measure == "MSE":
         y_pred = predict_classifier(model, x_test)
-        return rmse(y_pred, y_test)
+        return mean_squared_error(y_test, y_pred)
+
+    if measure == "accuracy":
+        y_pred = predict_classifier(model, x_test)
+        return accuracy_score(y_test, y_pred)
 
     else:
         raise ValueError("Wrong classifier defined.")
 
 
-def rmse(y_pred, y_test):
+def save_classifier(classifier, model, fname):
     """
-    Root mean square error
-    :param y_pred: array, first data to compare
-    :param y_test: array, second data to compare
-    :return: float, RMSE of the data
+    Function that saves the model
+    :param classifier: string, type of classifier
+    :param model: model to save
+    :param fname: string, name of the file without the extension
+    :return: /
     """
-    return m.sqrt(np.mean(np.square(y_pred - y_test)))
+    if classifier == "SVM":
+        dump(model, fname + '.joblib')
+
+    elif (classifier == "NN") or (classifier == "LSTM"):
+        model.save(fname + '.h5')
+
+    else:
+        raise ValueError("Wrong classifier defined.")
+
+
+def load_classifier(classifier, fname):
+    """
+    Function that loads and returns a model
+    :param classifier: string, type of classifier
+    :param fname: string, name of the file without the extension
+    :return: model saved
+    """
+    if classifier == "SVM":
+        return load(fname + '.joblib')
+
+    elif (classifier == "NN") or (classifier == "LSTM"):
+        return load_model(fname + '.h5')
+
+    else:
+        raise ValueError("Wrong classifier defined.")
 
 
 if __name__ == '__main__':
 
-    Classifier = "NN"
-    Measure = "RMSE"
+    import random as rd
+    # Data
+    print("Specify training set...")
 
-    Parameters = {'NN_input_dim': 10,
-                  'NN_layers': [8, 4, 1],
-                  'NN_activations': ['relu', 'relu', 'relu'],
-                  'NN_loss': 'mean_squared_error',
-                  'NN_optimizer': 'sgd',
-                  'epochs': 10,
-                  'batch_size': 1}
+    X_train = np.random.rand(5, 10, 3)
+    Y_train = np.random.rand(5, 1)
 
-    X_train = np.asarray([[0, 0, 1, 2, 3, 1, 4, 4, 3, 4],
-                          [0, 0, 1, 2, 3, 1, 4, 4, 3, 4]])
-    Y_train = [0.5, 2.5]
-    # X_test = [[0.6, -0.1], [1.8, 2.2]]
-    # Y_test = [0.3, 2.8]
-    # X_pred = [[0., 1.]]
+    X_test = np.random.rand(3, 10, 3)
+    Y_test = np.random.rand(3, 1)
+    X_pred = np.random.rand(3, 10, 3)
 
     # Train a classifier
+    print("Train the classifier...")
     Model = train_classifier(Classifier, X_train, Y_train, Parameters)
 
-    # # Evaluate the classifier
-    # error = evaluate_classifier(Model, Measure, X_test, Y_test)
-    #
-    # # Predict a value
-    # Y_pred = predict_classifier(Model, X_pred)
-    # print("Error: {}".format(error))
+    # Evaluate the classifier
+    print("Evaluate the classifier")
+    error = evaluate_classifier(Model, Measure, X_test, Y_test)
+
+    # Predict a value
+    print("Predict a value")
+    Y_pred = predict_classifier(Model, X_pred)
+    print("Error: {}".format(error))
+
+    # Save model
+    print("Save the model...")
+    save_classifier(Classifier, Model, Fname)
+
+    # Load model
+    print("Load the model...")
+    Model = load_classifier(Classifier, Fname)
