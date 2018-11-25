@@ -2,6 +2,8 @@ import wikipediaapi
 import wikipedia
 import requests
 import pandas as pd
+import random
+import time
 
 wiki_en = wikipediaapi.Wikipedia('en')
 wiki_fr = wikipediaapi.Wikipedia('fr')
@@ -42,6 +44,7 @@ def sample_bilingual(number=10000):
     random_pages = (wikipedia.random(number))
     count = 0
     data = []
+    time.sleep(random.random())
     for i, page_fr in enumerate(random_pages):
         if not i % 30:
             print('pages visited =', i)
