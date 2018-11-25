@@ -86,7 +86,7 @@ def handle_error(Cursor):
 
 
 if __name__ == '__main__':
-    # Parameters
+    # parameters
     file = "twitter"  # No need to specify the folder or the file extension
     query = "*"  # Query ("*" means everything)
     lang = "fr"  # Language in the query

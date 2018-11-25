@@ -52,7 +52,7 @@ print(res.shape)
 '''
 Classifier
 '''
-from classifier import train_classifier, predict_classifier, rmse
+from classifier import create_classifier, predict_classifier, rmse
 
 Classifier = "NN"
 Measure = "RMSE"
@@ -65,7 +65,7 @@ Parameters = {'NN_input_dim': 1681,
               'epochs': 10,
               'batch_size': 32}
 
-clf = train_classifier(Classifier, res, labels, Parameters)
+clf = create_classifier(Classifier, res, labels, Parameters)
 error = rmse(clf.predict(res), labels)
 print('rmse = ', error)
 
