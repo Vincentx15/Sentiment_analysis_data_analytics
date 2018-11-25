@@ -2,10 +2,10 @@ import pandas as pd
 import os
 import time
 
-paths = ['data/aclImdb/test/neg']
-paths.append('data/aclImdb/test/pos')
-paths.append('data/aclImdb/train/neg')
-paths.append('data/aclImdb/train/pos')
+paths = ['train_data/aclImdb/test/neg']
+paths.append('train_data/aclImdb/test/pos')
+paths.append('train_data/aclImdb/train/neg')
+paths.append('train_data/aclImdb/train/pos')
 
 
 def parse_imdb_reviews(path_dir):
@@ -54,7 +54,7 @@ def get_data(paths=paths):
 # print(df.columns)
 # print(time.time() - t1)
 
-# df.to_csv('data/raw_csv/imdb.csv')
+# df.to_csv('train_data/raw_csv/imdb.csv')
 
 
 

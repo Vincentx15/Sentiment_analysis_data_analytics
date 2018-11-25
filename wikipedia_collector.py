@@ -60,16 +60,16 @@ def sample_bilingual(number=10000):
             if not count % 10:
                 print('pages extracted =', count)
                 df = pd.DataFrame(data=data)
-                df.to_csv('data/wikipedia/samples.csv', mode='a')
+                df.to_csv('train_data/wikipedia/samples.csv', mode='a')
                 data = []
     df = pd.DataFrame(data=data)
-    df.to_csv('data/wikipedia/samples.csv', mode='a')
+    df.to_csv('train_data/wikipedia/samples.csv', mode='a')
 
 
 sample_bilingual(10000)
 
 
-# df = pd.read_csv('data/wikipedia/samples.csv')
+# df = pd.read_csv('train_data/wikipedia/samples.csv')
 # print(df)
 
 
