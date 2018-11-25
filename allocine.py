@@ -14,7 +14,7 @@ from time import time
 # Function to scrape the movies urls from http://www.allocine.fr/films/
 # Choose the page range with the two parameters start_page and end_page.
 # The url list is save as a csv file: movie_url.csv
-def getMoviesUrl(start_page, end_page, path='data/allocine/url/'):
+def getMoviesUrl(start_page, end_page, path='train_data/allocine/url/'):
     # Set the list
     movies_list = []
     movies_number = 0
@@ -53,7 +53,7 @@ def getMoviesUrl(start_page, end_page, path='data/allocine/url/'):
 # print(time() - t1)
 # fetches 20 000 id/hour
 
-def chunks_movie_url(start_page, end_page, chunksize=20, path='data/allocine/url/'):
+def chunks_movie_url(start_page, end_page, chunksize=20, path='train_data/allocine/url/'):
     """
     Wrapping of the previous method in one that does chunks to avoid loosing info
     """
@@ -155,12 +155,12 @@ def get_reviews_spectator(url, threshold=10):
 # print(reviews)
 
 
-def process_movie_list(movie_list, page, output_path='data/allocine/data/', threshold=10):
+def process_movie_list(movie_list, page, output_path='train_data/allocine/train_data/', threshold=10):
     """
     Given a list of ids,
     :param movie_list: list of ids
     :param page: page from which the ids where fetched
-    :param output_path: where to save the extracted data
+    :param output_path: where to save the extracted train_data
     :return: (result df, error dataframe)
     """
     # init list to save errors
@@ -199,7 +199,7 @@ def process_all_fetched(start_page, end_page, threshold=10):
     """
     Process all url fetched in the url/ directory that have pages in the given range
     """
-    input_dir = 'data/allocine/url/'
+    input_dir = 'train_data/allocine/url/'
     for csv_name in sorted(os.listdir(input_dir), key=lambda x: int(x[:x.find('_')])):
         # only fetch csv that have pages between the requested ones
         start_csv, end_csv = int(csv_name[0:csv_name.find('_')]), \
@@ -229,7 +229,7 @@ def get_data():
     load all reviews in a big csv
     :return: Dataframe
     """
-    input_dir = 'data/allocine/data/'
+    input_dir = 'train_data/allocine/train_data/'
     data = []
     for csv in os.listdir(input_dir):
         if csv != 'errors.csv':

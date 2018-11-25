@@ -44,7 +44,7 @@ def word_embeddings(fname, b, d, seq_l):
 
 if __name__ == '__main__':
 
-    embedding_fname = 'data/word_embeddings/GoogleNews-vectors-negative300.bin'
+    embedding_fname = 'train_data/word_embeddings/GoogleNews-vectors-negative300.bin'
     binary = True
     data = [["I", "eat", "a", "cow"],
             ["the", "bull", "is", "dead"]]

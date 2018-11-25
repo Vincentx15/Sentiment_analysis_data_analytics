@@ -9,7 +9,7 @@ stop_words_en = get_stop_words('en')
 
 def create_vectorizer(data, stopwords, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
-    fit an instance of a vectorizer on a certain data
+    fit an instance of a vectorizer on a certain train_data
     :param data:
     :param m_df:
     :param ngram:
@@ -34,7 +34,7 @@ def create_vectorizer(data, stopwords, ngram=(1, 1), min_df=0.01, max_df=0.9):
 from sklearn.ensemble import AdaBoostRegressor
 from joblib import dump, load
 
-data = pd.read_csv('data/raw_csv/imdb.csv')
+data = pd.read_csv('train_data/raw_csv/imdb.csv')
 reviews = data['review']
 labels = data['rating']
 # vec = create_vectorizer(reviews, stop_words_en)
