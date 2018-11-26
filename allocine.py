@@ -217,7 +217,7 @@ def process_all_fetched(start_page, end_page, threshold=10):
 
 
 t1 = time()
-process_all_fetched(615, 1002)
+process_all_fetched(928, 1002)
 print(time() - t1)
 # 12395s for 500 pages
 
