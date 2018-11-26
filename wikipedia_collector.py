@@ -64,10 +64,10 @@ def sample_bilingual_batch(iteration):
             data.append(row)
             if not count % 20:
                 df = pd.DataFrame(data=data)
-                df.to_csv('train_data/wikipedia/samples.csv', mode='a')
+                df.to_csv('data/wikipedia/samples.csv', mode='a')
                 data = []
     df = pd.DataFrame(data=data)
-    df.to_csv('train_data/wikipedia/samples.csv', mode='a')
+    df.to_csv('data/wikipedia/samples.csv', mode='a')
 
 
 def sample_bilingual(number=10000):
@@ -80,7 +80,7 @@ def sample_bilingual(number=10000):
 sample_bilingual(10000)
 
 
-# df = pd.read_csv('train_data/wikipedia/samples.csv')
+# df = pd.read_csv('data/wikipedia/samples.csv')
 # print(df)
 
 

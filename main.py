@@ -20,7 +20,7 @@ y_train = np.asarray([[1.], [1.], [0.], [0.]])
 y_test = np.asarray([[1.], [0.]])
 
 # Extract word embedding
-embedding_fname = 'train_data/word_embeddings/GoogleNews-vectors-negative300.bin'
+embedding_fname = 'data/word_embeddings/GoogleNews-vectors-negative300.bin'
 binary = True
 seq_len = 5
 
@@ -32,7 +32,7 @@ feature_len = x_test[0].shape[1]
 # Create a classifier
 classifier = "LSTM"
 measure = "MSE"
-file_name = "train_data/model/first_model"
+file_name = "data/model/first_model"
 epochs = 4
 batch_size = 1
 parameters['LSTM']['input_shape'] = (seq_len, feature_len)

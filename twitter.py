@@ -15,9 +15,9 @@ def complete_filename(file, query, lang, max_tweets):
     Complete the filename by adding the folder, the extansion, etc
     '''
     if query == "*":
-        return 'train_data/twitter/' + file + '_' + lang + '_' + str(max_tweets) + '_' + 'all' + '.txt'
+        return 'data/twitter/' + file + '_' + lang + '_' + str(max_tweets) + '_' + 'all' + '.txt'
     else:
-        return 'train_data/twitter/' + file + '_' + lang + '_' + str(max_tweets) + '_' + query + '.txt'
+        return 'data/twitter/' + file + '_' + lang + '_' + str(max_tweets) + '_' + query + '.txt'
 
 
 def load_api(fname):
@@ -60,7 +60,7 @@ def search_tweets(api, query, lang, max_tweets, min_age):
 
 def write_csv(fname, tweets):
     '''
-    Write the tweets train_data in a csv
+    Write the tweets data in a csv
     '''
     # Open the file
     with open(fname, 'w', encoding="utf-8") as f:
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     fname = complete_filename(file, query, lang, max_tweets)
 
     # Load twitter's api
-    api = load_api('train_data/twitter/twitter_keys.txt')
+    api = load_api('data/twitter/twitter_keys.txt')
 
     # Search tweets specified by the query
     tweets = search_tweets(api, query, lang, max_tweets, min_age)

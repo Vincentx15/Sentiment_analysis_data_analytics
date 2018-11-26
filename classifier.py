@@ -9,7 +9,7 @@ from keras.layers import Dense, Dropout, LSTM
 # Default parameters
 classifier = "LSTM"                 # String, can be SVM, NN or LSTM
 measure = "MSE"                     # String, can be RMSE or accuracy
-file_name = "train_data/model/model1"     # String, name of the file to save/load with no extension
+file_name = "data/model/model1"     # String, name of the file to save/load with no extension
 epochs = 1                          # Epochs for the training
 batch_size = 1                      # Size of the batch for the training
 
@@ -113,9 +113,9 @@ def train_classifier(m, x, y, ep=None, b_s=None):
 
 def predict_classifier(m, x):
     """
-    Compute the prediction of the classifier in the specified train_data
+    Compute the prediction of the classifier in the specified data
     :param m: model that performs the prediction
-    :param x: array, train_data used for the prediction
+    :param x: array, data used for the prediction
     :return: array, prediction
     """
     return m.predict(x)
@@ -126,8 +126,8 @@ def evaluate_classifier(m, measure_type, x, y):
     Evaluate the model with the specified measure_type
     :param m: model to evaluate
     :param measure_type: string, measure to use
-    :param x: array, train_data for the prediction
-    :param y: true train_data
+    :param x: array, data for the prediction
+    :param y: true data
     :return: corresponding score or error
     """
     if measure_type == "MSE":
@@ -179,7 +179,7 @@ def load_classifier(classifier_type, fname):
 
 if __name__ == '__main__':
 
-    # Initialize random train_data
+    # Initialize random data
     x_train = np.random.rand(5, 10, 3)
     y_train = np.random.rand(5, 1)
 
