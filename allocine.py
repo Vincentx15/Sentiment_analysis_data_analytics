@@ -155,7 +155,7 @@ def get_reviews_spectator(url, threshold=10):
 # print(reviews)
 
 
-def process_movie_list(movie_list, page, output_path='train_data/allocine/train_data/', threshold=10):
+def process_movie_list(movie_list, page, output_path='train_data/allocine/data/', threshold=10):
     """
     Given a list of ids,
     :param movie_list: list of ids
@@ -217,7 +217,7 @@ def process_all_fetched(start_page, end_page, threshold=10):
 
 
 t1 = time()
-process_all_fetched(501, 1002)
+process_all_fetched(615, 1002)
 print(time() - t1)
 # 12395s for 500 pages
 
@@ -229,7 +229,7 @@ def get_data():
     load all reviews in a big csv
     :return: Dataframe
     """
-    input_dir = 'train_data/allocine/train_data/'
+    input_dir = 'train_data/allocine/data/'
     data = []
     for csv in os.listdir(input_dir):
         if csv != 'errors.csv':

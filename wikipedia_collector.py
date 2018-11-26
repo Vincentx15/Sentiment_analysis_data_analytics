@@ -39,15 +39,20 @@ def get_other_language(page, language):
 # print(r.text)
 # r.json()
 
-def sample_bilingual(number=10000):
+def sample_bilingual_batch(iteration):
+    """
+    Get random wiki pages, to be called by the function below
+    :param iteration: to track the progress
+    :return:
+    """
     wikipedia.set_lang('fr')
-    random_pages = (wikipedia.random(number))
+    random_pages = (wikipedia.random(500))
     count = 0
     data = []
     time.sleep(random.random())
     for i, page_fr in enumerate(random_pages):
         if not i % 30:
-            print('pages visited =', i)
+            print('pages visited =', iteration + i)
         page_fr = wiki_fr.page(page_fr)
         page_en = get_other_language(page_fr, 'en')
         if page_en:
@@ -57,13 +62,19 @@ def sample_bilingual(number=10000):
             summary_en = page_en.summary
             row = {'id': id, 'summary_fr': summary_fr, 'summary_en': summary_en}
             data.append(row)
-            if not count % 10:
-                print('pages extracted =', count)
+            if not count % 20:
                 df = pd.DataFrame(data=data)
                 df.to_csv('train_data/wikipedia/samples.csv', mode='a')
                 data = []
     df = pd.DataFrame(data=data)
     df.to_csv('train_data/wikipedia/samples.csv', mode='a')
+
+
+def sample_bilingual(number=10000):
+    sampled = 0
+    while sampled < number:
+        sample_bilingual_batch(sampled)
+        sampled += 500
 
 
 sample_bilingual(10000)
