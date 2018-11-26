@@ -1,14 +1,20 @@
+# utils
 import numpy as np
-from gensim.models import KeyedVectors as Kv
-from sklearn.feature_extraction.text import CountVectorizer
-from stop_words import get_stop_words
+import time
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from scipy.sparse import hstack, csr_matrix
+
+# we
+from gensim.models import KeyedVectors as Kv
+from gensim.models import FastText
+
+# bow
+from sklearn.feature_extraction.text import CountVectorizer
+from stop_words import get_stop_words
 from nltk.stem.snowball import FrenchStemmer
 from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
-import time
 
 stop_words_fr = get_stop_words('fr')
 stop_words_en = get_stop_words('en')
@@ -22,6 +28,9 @@ bow embedding
 #     token_pattern = re.compile(r"(?u)\b\w\w+\b")
 #     return lambda doc: list(map(stemmer.stem, token_pattern.findall(doc)))
 
+# def english_lemmatizer(lemmatizer):
+#     token_pattern = re.compile(r"(?u)\b\w\w+\b")
+#     return lambda doc: list(map(lemmatizer.lemmatize, token_pattern.findall(doc)))[0]
 
 class FrenchLemmaTokenizer(object):
     def __init__(self):
@@ -37,11 +46,6 @@ class EnglishLemmaTokenizer(object):
 
     def __call__(self, s):
         return [self.wnl.lemmatize(t) for t in word_tokenize(s) if t.isalpha()]
-
-
-# def english_lemmatizer(lemmatizer):
-#     token_pattern = re.compile(r"(?u)\b\w\w+\b")
-#     return lambda doc: list(map(lemmatizer.lemmatize, token_pattern.findall(doc)))[0]
 
 
 def bow_features(raw_train_data, raw_test_data, langage, ngram=(1, 1), min_df=0.01, max_df=0.9):
@@ -82,8 +86,8 @@ def bow_features(raw_train_data, raw_test_data, langage, ngram=(1, 1), min_df=0.
     return train_data, test_data
 
 
-data = ["I ate a cow", 'awesome, loves it. Oh fuck it is so good', 'a']
-a = bow_features(data, data, 'en')
+# data = ["I ate a cow", 'awesome, loves it. Oh fuck it is so good', 'a']
+# a = bow_features(data, data, 'en')
 # return a lign of zeroes if it is empty
 # data = ["J'ai mangé une vache", "Génial, j'adore. Oh putain c'est tellement bon"]
 # a = bow_features(data, data, 'fr')
@@ -137,18 +141,28 @@ def word_embeddings(preprocessed_data, language, seq_l):
     """
     # Load the pretrained model
     if language == 'en':
-        fname = 'data/word_embeddings/GoogleNews-vectors-negative300.bin'
-        bin = True
+        fname = 'data/word_embeddings/wiki.en.vec'
+        bin = False
         t1 = time.time()
         print('before')
+        # model = FastText.load(fname)
+        # feat_l = len(model['hello'])
+
         model = Kv.load_word2vec_format(fname, binary=bin)
-        print('after', time.time()-t1)
-        feat_l = len(model['hello'])
+        feat_l = len(model.wv['hello'])
+        print('after', time.time() - t1)
     if language == 'fr':
         fname = 'data/word_embeddings/wiki.fr.bin'
-        bin = True
-        model = Kv.load_word2vec_format(fname, binary=bin)
-        feat_l = len(model['bonjour'])
+        # bin = True
+        # model = Kv.load_word2vec_format(fname, binary=bin)
+
+        t1 = time.time()
+        print('before')
+        model = FastText.load(fname)
+        # model = Kv.load_word2vec_format(fname, binary=bin)
+        print('after', time.time() - t1)
+
+        feat_l = len(model.wv['bonjour'])
 
     x = []
     for review in preprocessed_data:
@@ -156,6 +170,9 @@ def word_embeddings(preprocessed_data, language, seq_l):
         sentence_embedding = []
 
         for word in review:
+            # wv = model.wv[word]
+            # if wv:
+            #     sentence_embedding.append()
             try:
                 sentence_embedding.append(model[word])
             except KeyError:
