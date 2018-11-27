@@ -216,9 +216,9 @@ def process_all_fetched(start_page, end_page, threshold=10):
             print('processed {}'.format(csv_name))
 
 
-t1 = time()
-process_all_fetched(928, 1002)
-print(time() - t1)
+# t1 = time()
+# process_all_fetched(928, 1002)
+# print(time() - t1)
 # 12395s for 500 pages
 
 
@@ -236,4 +236,10 @@ def get_data():
             df = pd.read_csv(input_dir + csv, usecols=['id', 'review', 'rating'])
             data.append(df)
     return pd.concat(data, axis=0)
-# print(get_data())
+
+# all = get_data()
+# all.to_csv('data/raw_csv/allocine.csv')
+# print()
+
+# df = pd.read_csv('data/raw_csv/allocine.csv')
+# print(df.shape)

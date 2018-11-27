@@ -4,6 +4,7 @@ import time
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from scipy.sparse import hstack, csr_matrix
+import gc
 
 # we
 from gensim.models import KeyedVectors as Kv
@@ -110,10 +111,10 @@ def preprocess_tokenize(data, langage, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
     if langage == 'en':
         stopwords = stop_words_en
-    if langage == 'fr':
+    elif langage == 'fr':
         stopwords = stop_words_fr
     else:
-        ValueError('Wrong language ! ')
+        raise ValueError('Wrong language ! ')
     vectorizer = CountVectorizer(input='content ',
                                  analyzer='word',
                                  ngram_range=ngram,
@@ -130,40 +131,15 @@ def preprocess_tokenize(data, langage, ngram=(1, 1), min_df=0.01, max_df=0.9):
 # print(a)
 
 
-def word_embeddings(preprocessed_data, language, seq_l):
+def word_embeddings(preprocessed_data, model, length_embedding, seq_l):
     """
-    Returns a feature array with for each sample the embeddings of the words in the sentence
-    :param fname: string, file name of the pretrained embedding
-    :param b: bool, is the file binary or not
+    Returns a feature list with for each sample the embeddings of the words in the sentence
     :param preprocessed_data: list of list of string, sentences to process
+    :param model: a word embedding model
+    :param length_embedding: the length of each of the embedding vectors
     :param seq_l: int, length of the sequence we want to return
-    :return:
+    :return: list of either [] or word_embedding*seq_l
     """
-    # Load the pretrained model
-    if language == 'en':
-        fname = 'data/word_embeddings/wiki.en.vec'
-        bin = False
-        t1 = time.time()
-        print('before')
-        # model = FastText.load(fname)
-        # feat_l = len(model['hello'])
-
-        model = Kv.load_word2vec_format(fname, binary=bin)
-        feat_l = len(model.wv['hello'])
-        print('after', time.time() - t1)
-    if language == 'fr':
-        fname = 'data/word_embeddings/wiki.fr.bin'
-        # bin = True
-        # model = Kv.load_word2vec_format(fname, binary=bin)
-
-        t1 = time.time()
-        print('before')
-        model = FastText.load(fname)
-        # model = Kv.load_word2vec_format(fname, binary=bin)
-        print('after', time.time() - t1)
-
-        feat_l = len(model.wv['bonjour'])
-
     x = []
     for review in preprocessed_data:
         # Create an embedding for each sentence
@@ -188,7 +164,7 @@ def word_embeddings(preprocessed_data, language, seq_l):
             # Perform zero-padding if necessary
             else:
                 for i in range(seq_l - len(sentence_embedding)):
-                    sentence_embedding.append(np.zeros(feat_l))
+                    sentence_embedding.append(np.zeros(length_embedding))
                 x.append(sentence_embedding)
         else:
             x.append([])
@@ -200,11 +176,31 @@ def we_features(raw_train_data, raw_test_data, langage, seq_l, ngram=(1, 1), min
     """
     wrapper for word embedding features to take two sets (training and test)
     """
+    print('first step')
+    # Load the pretrained model
+    if langage == 'en':
+        fname = 'data/word_embeddings/wiki.en.vec.bin'
+        bin = True
+        model = Kv.load_word2vec_format(fname, binary=bin)
+        length_embedding = len(model['hello'])
+    elif langage == 'fr':
+        fname = 'data/word_embeddings/wiki.fr.vec.bin'
+        bin = True
+        model = Kv.load_word2vec_format(fname, binary=bin)
+        length_embedding = len(model['bonjour'])
+    else:
+        raise ValueError('Wrong language ! ')
+
+    print('second step')
+    # using this we, compute features
     processed_train_data = preprocess_tokenize(raw_train_data, langage=langage, ngram=ngram, min_df=min_df,
                                                max_df=max_df)
-    train_data = word_embeddings(processed_train_data, language=langage, seq_l=seq_l)
+    train_data = word_embeddings(processed_train_data, model=model, length_embedding=length_embedding, seq_l=seq_l)
+
+    print('third step')
     processed_test_data = preprocess_tokenize(raw_test_data, langage=langage, ngram=ngram, min_df=min_df, max_df=max_df)
-    test_data = word_embeddings(processed_test_data, language=langage, seq_l=seq_l)
+    test_data = word_embeddings(processed_test_data, model=model, length_embedding=length_embedding, seq_l=seq_l)
+
     return train_data, test_data
 
 
@@ -214,13 +210,14 @@ def remove_empty(data, labels=None, method='bow'):
     :param method: string for the method
     :return: clean data and clean labels if some are provided
     """
+    gc.collect()
     if method == 'we':
         iloc = []
         for id, item in enumerate(data):
             if not item:
                 iloc.append(id)
         clean_data = np.asarray([x for i, x in enumerate(data) if i not in iloc])
-        if labels:
+        if labels is not None:
             clean_labels = np.delete(labels, iloc)
         else:
             return clean_data
@@ -253,17 +250,15 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
     :param labels: name of the column to use for the labels, if none enter 0
     :return: train, test with labels
     """
-    data = pd.read_csv(input_path, nrows=50)
+    data = pd.read_csv(input_path)
     text = data[text_column].values
-
-    # scipy.sparse.csr_matrix
-    # scipy.sparse.hstack
 
     # careful if no labels are provided, return a np.array of shape (len(features),)
     if labels_name:
         labels = data[labels_name].values
     else:
         labels = np.zeros(text.shape)
+
     # split data
     raw_train_data, raw_test_data, train_labels, test_labels = train_test_split(text, labels,
                                                                                 test_size=0.33, random_state=42)
@@ -276,6 +271,7 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
     if method == 'we':
         train_data, test_data = we_features(raw_train_data, raw_test_data, langage, seq_l, ngram=ngram, min_df=min_df,
                                             max_df=max_df)
+        gc.collect()
     elif method == 'bow':
         train_data, test_data = bow_features(raw_train_data, raw_test_data, langage,
                                              ngram=ngram, min_df=min_df, max_df=max_df)
@@ -286,8 +282,11 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
     columns = ['text']
     if labels_name:
         train_data, train_labels = remove_empty(train_data, train_labels, method)
+        print('fourth_step')
         test_data, test_labels = remove_empty(test_data, test_labels, method)
+
         return train_data, test_data, train_labels, test_labels
+
     #     columns.append('label')
     #     train = hstack((data, train_labels))
     #     test = hstack((test_data, test_labels))
@@ -306,10 +305,18 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
 
 
 if __name__ == '__main__':
-    # pass
-    train_data, test_data, train_labels, test_labels = create_features('data/raw_csv/test.csv', 'en', method='we',
+    pass
+
+    t1 = time.time()
+    train_data, test_data, train_labels, test_labels = create_features('data/raw_csv/imdb.csv', 'en', method='we',
                                                                        save_name='test.csv')
     print(train_data.shape, train_labels.shape, test_data.shape, test_labels.shape)
+    np.save('data/train_data', train_data)
+    np.save('data/test_data', test_data)
+    np.save('data/train_labels', train_labels)
+    np.save('data/test_labels', test_labels)
+    print(time.time() - t1)
+
     # embedding_fname = 'data/word_embeddings/GoogleNews-vectors-negative300.bin'
     # binary = True
     # data = [["I", "eat", "a", "cow"],
