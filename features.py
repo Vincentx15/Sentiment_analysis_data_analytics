@@ -124,7 +124,7 @@ def preprocess_tokenize(data, langage, ngram=(1, 1), min_df=0.01, max_df=0.9):
                                  min_df=min_df,
                                  max_df=max_df)
     analyzer = vectorizer.build_analyzer()
-    processed = [analyzer(doc) for doc in data]
+    processed = [analyzer(doc) if (doc not in [np.NaN, np.nan]) else [] for doc in data]
     return processed
 
 
@@ -296,35 +296,79 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
     return train_data, test_data
 
 
-def save_features(train_data, test_data, train_labels, test_labels, language, method):
+def wiki(input_path, method='we', seq_l=42, ngram=(1, 1), min_df=0.01,
+         max_df=0.9):
+    """
+    :param input_path:
+    :param method:
+    """
+    data = pd.read_csv(input_path)
+    text_en = data['summary_en'].values
+    text_fr = data['summary_fr'].values
+    # print(type(text_en))
+    # first = text_en[0]
+    # print(first, type(first))
 
+    # Do the appropriate embedding on the text
+    if method == 'we':
+        # English
+        fname = 'data/word_embeddings/wiki.en.vec.bin'
+        bin = True
+        model = Kv.load_word2vec_format(fname, binary=bin)
+        length_embedding = len(model['hello'])
+
+        processed_en = preprocess_tokenize(text_en, langage='en', ngram=ngram, min_df=min_df,
+                                           max_df=max_df)
+        text_en = word_embeddings(processed_en, model=model, length_embedding=length_embedding, seq_l=seq_l)
+        gc.collect()
+        print('third step')
+        # French
+        fname = 'data/word_embeddings/wiki.fr.vec.bin'
+        bin = True
+        model = Kv.load_word2vec_format(fname, binary=bin)
+        length_embedding = len(model['bonjour'])
+
+        processed_fr = preprocess_tokenize(text_fr, langage='fr', ngram=ngram, min_df=min_df,
+                                           max_df=max_df)
+        text_fr = word_embeddings(processed_fr, model=model, length_embedding=length_embedding, seq_l=seq_l)
+    else:
+        raise ValueError('This is not an acceptable method !')
+
+    text_en, text_fr = remove_empty(text_en, text_fr, method)
+    text_fr, text_en = remove_empty(text_fr, text_en, method)
+
+    return text_en, text_fr
+
+
+def save_features(train_data, test_data, train_labels, test_labels, language, method):
     fname = "data/features/"
     if method == "bow":
-        sp.save_npz(fname+'train_data_bow_'+language+'.npz', train_data)
-        sp.save_npz(fname+'test_data_bow_'+language+'.npz', test_data)
-        np.save(fname+'train_labels_bow_'+language, train_labels)
-        np.save(fname+'test_labels_bow_'+language, test_labels)
+        sp.save_npz(fname + 'train_data_bow_' + language + '.npz', train_data)
+        sp.save_npz(fname + 'test_data_bow_' + language + '.npz', test_data)
+        np.save(fname + 'train_labels_bow_' + language, train_labels)
+        np.save(fname + 'test_labels_bow_' + language, test_labels)
         print("Data saved.")
 
     elif method == "we":
-        np.save(fname+'train_data_we_'+language, train_data)
-        np.save(fname+'test_data_we_'+language, test_data)
-        np.save(fname+'train_labels_we_'+language, train_labels)
-        np.save(fname+'test_labels_we_'+language, test_labels)
+        np.save(fname + 'train_data_we_' + language, train_data)
+        np.save(fname + 'test_data_we_' + language, test_data)
+        np.save(fname + 'train_labels_we_' + language, train_labels)
+        np.save(fname + 'test_labels_we_' + language, test_labels)
         print("Data saved.")
-
+    elif method == "wiki":
+        np.save(fname + 'en', train_data)
+        np.save(fname + 'fr', test_data)
     else:
         raise ValueError("Wrong method.")
 
 
 def load_features(language, method):
-
     fname = "data/features/"
     if method == "bow":
-        train_data = sp.load_npz(fname+'train_data_bow_'+language+'.npz')
-        test_data = sp.load_npz(fname+'test_data_bow_'+language+'.npz')
-        train_labels = np.ravel(np.load(fname+'train_labels_bow_'+language+'.npy'))
-        test_labels = np.ravel(np.load(fname+'test_labels_bow_'+language+'.npy'))
+        train_data = sp.load_npz(fname + 'train_data_bow_' + language + '.npz')
+        test_data = sp.load_npz(fname + 'test_data_bow_' + language + '.npz')
+        train_labels = np.ravel(np.load(fname + 'train_labels_bow_' + language + '.npy'))
+        test_labels = np.ravel(np.load(fname + 'test_labels_bow_' + language + '.npy'))
         if language == 'en':
             train_labels = np.divide(train_labels, 2.)
             test_labels = np.divide(test_labels, 2.)
@@ -332,8 +376,8 @@ def load_features(language, method):
         return train_data, test_data, train_labels, test_labels
 
     elif method == "we":
-        train_data = np.load(fname+'train_data_we_'+language+'.npy')
-        test_data = np.load(fname+'test_data_we_'+language+'.npy')
+        train_data = np.load(fname + 'train_data_we_' + language + '.npy')
+        test_data = np.load(fname + 'test_data_we_' + language + '.npy')
         train_labels = np.ravel(np.load(fname + 'train_labels_we_' + language + '.npy'))
         test_labels = np.ravel(np.load(fname + 'test_labels_we_' + language + '.npy'))
         if language == 'en':
@@ -347,14 +391,23 @@ def load_features(language, method):
 
 
 if __name__ == '__main__':
+    # method = 'bow'
+    # language = 'en'
+    # csv_file = 'data/raw_csv/imdb.csv'
+    #
+    # t1 = time.time()
+    # train_data, test_data, train_labels, test_labels = create_features(csv_file, language, method=method)
+    # print(train_data.shape, train_labels.shape, test_data.shape, test_labels.shape)
+    #
+    # save_features(train_data, test_data, train_labels, test_labels, language, method)
+    # print(time.time() - t1)
 
-    method = 'bow'
-    language = 'en'
-    csv_file = 'data/raw_csv/imdb.csv'
+    csv_file = 'data/wikipedia/samples.csv'
 
     t1 = time.time()
-    train_data, test_data, train_labels, test_labels = create_features(csv_file, language, method=method)
-    print(train_data.shape, train_labels.shape, test_data.shape, test_labels.shape)
+    en, fr = wiki(csv_file)
+    print(en, fr)
+    save_features(en, fr, [], [],'',method='wiki')
 
-    save_features(train_data, test_data, train_labels, test_labels, language, method)
+    # save_features(train_data, test_data, train_labels, test_labels, language, method)
     print(time.time() - t1)

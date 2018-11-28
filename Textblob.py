@@ -1,4 +1,5 @@
 from textblob import TextBlob
+from textblob_fr import PatternTagger, PatternAnalyzer
 import pandas as pd
 import numpy as np
 import pandas as pd
@@ -17,9 +18,9 @@ ratings_en = data_en['rating']
 # sns.distplot(x)
 # plt.show()
 
-# data_fr = pd.read_csv('data/raw_csv/allocine.csv')
-# reviews_fr = data_fr['review']
-# ratings_fr = data_fr['rating']
+data_fr = pd.read_csv('data/raw_csv/allocine.csv')
+reviews_fr = data_fr['review']
+ratings_fr = data_fr['rating']
 
 # x = np.array([len(review) for review in reviews_fr])
 # sns.distplot(x)
@@ -33,19 +34,49 @@ import pickle
 
 subset = -1
 
+'''
+en
+'''
+
 # reviews_en = data_en['review'][:subset]
 # results = [TextBlob(review).sentiment[0] for review in reviews_en]
 # results = [2.5 * (res + 1) for res in results]
 # pickle.dump(results, open('textblop.p', "wb"))
 
-results = pickle.load(open("textblop.p", "rb"))
+# results = pickle.load(open("textblop.p", "rb"))
+
+# results = np.array(results)
+# sns.distplot(results)
+# plt.show()
+#
+# y = np.array(ratings_en[:subset])
+# y = np.divide(y, 2)
+# sns.distplot(y)
+# plt.show()
+#
+# from sklearn.metrics import accuracy_score, mean_squared_error
+#
+# error = mean_squared_error(results, y)
+# print(np.sqrt(error))
+
+'''
+fr
+'''
+
+subset = -1
+
+
+reviews_fr = data_fr['review'][:subset]
+results = [TextBlob(review, pos_tagger=PatternTagger(), analyzer=PatternAnalyzer()).sentiment[0] for review in reviews_fr]
+results = [2.5 * (res + 1) for res in results]
+pickle.dump(results, open('textblop-fr.p', "wb"))
+
+# results = pickle.load(open("textblop.p", "rb"))
 
 results = np.array(results)
 sns.distplot(results)
-plt.show()
 
-y = np.array(ratings_en[:subset])
-y = np.divide(y, 2)
+y = np.array(ratings_fr[:subset])
 sns.distplot(y)
 plt.show()
 
@@ -53,11 +84,3 @@ from sklearn.metrics import accuracy_score, mean_squared_error
 
 error = mean_squared_error(results, y)
 print(np.sqrt(error))
-
-# testimonial = TextBlob('terrible movie. it was really boring, do not go and see it')
-# labels = testimonial.sentiment
-# print(labels,labels[0])
-#
-# testimonial = TextBlob('Amazing movie, I loved seeing it. It was very fun. The actors play very well')
-# labels = testimonial.sentiment
-# print(labels)
