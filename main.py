@@ -47,14 +47,3 @@ print(predict_classifier(model, x_test))
 save_classifier(classifier, model, file_name)
 
 
-'''
-from textblob import TextBlob
-
-testimonial = TextBlob('terrible movie. it was really boring, do not go and see it')
-labels = testimonial.sentiment
-print(labels)
-
-testimonial = TextBlob('Amazing movie, I loved seeing it. It was very fun. The actors play very well')
-labels = testimonial.sentiment
-print(labels)
-'''

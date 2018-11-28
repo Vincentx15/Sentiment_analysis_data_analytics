@@ -241,5 +241,9 @@ def get_data():
 # all.to_csv('data/raw_csv/allocine.csv')
 # print()
 
-# df = pd.read_csv('data/raw_csv/allocine.csv')
-# print(df.shape)
+df = pd.read_csv('data/raw_csv/allocine.csv')
+print(df.shape)
+
+pass 
+
+
