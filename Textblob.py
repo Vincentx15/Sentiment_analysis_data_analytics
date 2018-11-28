@@ -17,9 +17,9 @@ ratings_en = data_en['rating']
 # sns.distplot(x)
 # plt.show()
 
-# data_fr = pd.read_csv('data/raw_csv/allocine.csv')
-# reviews_fr = data_fr['review']
-# ratings_fr = data_fr['rating']
+data_fr = pd.read_csv('data/raw_csv/allocine.csv')
+reviews_fr = data_fr['review']
+ratings_fr = data_fr['rating']
 
 # x = np.array([len(review) for review in reviews_fr])
 # sns.distplot(x)
@@ -28,31 +28,35 @@ ratings_en = data_en['rating']
 # sns.distplot(x)
 # plt.show()
 
-import time
-import pickle
+# import time
+# import pickle
 
-subset = -1
+# subset = -1
 
 # reviews_en = data_en['review'][:subset]
-# results = [TextBlob(review).sentiment[0] for review in reviews_en]
-# results = [2.5 * (res + 1) for res in results]
+results_en = [TextBlob(review).sentiment[0] for review in reviews_en]
+results_en = [2.5 * (res + 1) for res in results_en]
+results_fr = [TextBlob(review).sentiment[0] for review in reviews_fr]
+results_fr = [2.5 * (res + 1) for res in results_fr]
 # pickle.dump(results, open('textblop.p', "wb"))
 
-results = pickle.load(open("textblop.p", "rb"))
+# results = pickle.load(open("textblop.p", "rb"))
 
-results = np.array(results)
-sns.distplot(results)
-plt.show()
+# results_en = np.array(results_en)
+# results_fr = np.array(results_fr)
+# sns.distplot(results_en)
+# sns.distplot(results_fr)
+# plt.show()
 
-y = np.array(ratings_en[:subset])
-y = np.divide(y, 2)
-sns.distplot(y)
-plt.show()
+# y = np.array(ratings_en[:subset])
+# y = np.divide(y, 2)
+# sns.distplot(y)
+# plt.show()
 
-from sklearn.metrics import accuracy_score, mean_squared_error
+# from sklearn.metrics import accuracy_score, mean_squared_error
 
-error = mean_squared_error(results, y)
-print(np.sqrt(error))
+# error = mean_squared_error(results, y)
+# print(np.sqrt(error))
 
 # testimonial = TextBlob('terrible movie. it was really boring, do not go and see it')
 # labels = testimonial.sentiment
