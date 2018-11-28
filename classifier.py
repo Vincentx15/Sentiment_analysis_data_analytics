@@ -115,8 +115,9 @@ def predict_classifier(m, x):
     :param x: array, data used for the prediction
     :return: array, prediction
     """
+    pred = m.predict(x)
     print("Prediction done.")
-    return m.predict(x)
+    return pred
 
 
 def evaluate_classifier(measure_type, y_true, y_pred):
