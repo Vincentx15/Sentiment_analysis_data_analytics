@@ -1,49 +1,35 @@
-from features import *
 from classifier import *
+from features import load_features
 
-import numpy as np
+# Parameters
+classifier = 'LSTM'
+method = 'we'
+language = 'fr'
 
-# TODO
-# Check whether we should keep some stopwords : not, neither... for the we method
-# Modify the we method by using langage default options (binary, path)
-# Discuss how to store the results
+# Load the data
+x_train, x_test, y_train, y_test = load_features(language, method)
 
-# List of list of words
-train_data = [['amazing', 'movie', 'genius', 'director', 'incredible', 'good'],
-              ['perfect', 'plot', 'interesting', 'actors'],
-              ['shitty', 'very', 'bad', 'boring'],
-              ['not', 'recommend', 'stupid', 'bad', 'poor', 'crap']]
-test_data = [['perfect', 'movie', 'great', 'director', 'interesting'],
-             ['poorly', 'written', 'bad', 'review', 'boring']]
-# numpy array
-y_train = np.asarray([[1.], [1.], [0.], [0.]])
-y_test = np.asarray([[1.], [0.]])
+# Load a classifier
+load_file = 'data/model/untrained_' + classifier
+# load_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
+model = load_classifier(classifier, load_file)
 
-# Extract word embedding
-embedding_fname = 'data/word_embeddings/GoogleNews-vectors-negative300.bin'
-binary = True
-seq_len = 5
+# Train the classifier
+epochs = 20
+batch_size = 32
+validation_data = (x_test, y_test)
+save_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
+model = train_classifier(classifier, model, x_train, y_train, epochs, batch_size, validation_data,
+                         save_file=save_file+'.h5')
 
-x_train = word_embeddings(embedding_fname, binary, train_data, seq_len)
-x_test = word_embeddings(embedding_fname, binary, test_data, seq_len)
+# Predict on the test set
+model = load_classifier(classifier, save_file)
+y_pred = predict_classifier(model, x_test)
 
-feature_len = x_test[0].shape[1]
+# Compute the performance
+print("RMSE: {}".format(evaluate_classifier("RMSE", y_test, y_pred)))
+print("Accuracy: {}".format(evaluate_classifier("multi_accuracy", y_test, y_pred)))
+print("Binary accuracy: {}".format(evaluate_classifier("binary_accuracy", y_test, y_pred)))
 
-# Create a classifier
-classifier = "LSTM"
-measure = "MSE"
-file_name = "data/model/first_model"
-epochs = 4
-batch_size = 1
-parameters['LSTM']['input_shape'] = (seq_len, feature_len)
-parameters['LSTM']['cells'] = 1
-parameters['LSTM']['units'] = [1]
-parameters['LSTM']['return_sequences'] = [False]
-
-# model = create_classifier(classifier, parameters)
-model = load_classifier(classifier, file_name)
-model = train_classifier(model, x_train, y_train, epochs, batch_size)
-print(predict_classifier(model, x_test))
-save_classifier(classifier, model, file_name)
-
-
+# # Save the model
+# save_classifier(classifier, model, save_file)

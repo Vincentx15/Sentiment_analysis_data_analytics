@@ -237,8 +237,8 @@ def get_data():
             data.append(df)
     return pd.concat(data, axis=0)
 
-# all = get_data()
-# all.to_csv('data/raw_csv/allocine.csv')
+all = get_data()
+all.to_csv('data/raw_csv/allocine.csv')
 # print()
 
 df = pd.read_csv('data/raw_csv/allocine.csv')

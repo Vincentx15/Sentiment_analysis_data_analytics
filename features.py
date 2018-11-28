@@ -17,6 +17,8 @@ from nltk.stem.snowball import FrenchStemmer
 from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
 
+import scipy.sparse as sp
+
 stop_words_fr = get_stop_words('fr')
 stop_words_en = get_stop_words('en')
 
@@ -146,9 +148,6 @@ def word_embeddings(preprocessed_data, model, length_embedding, seq_l):
         sentence_embedding = []
 
         for word in review:
-            # wv = model.wv[word]
-            # if wv:
-            #     sentence_embedding.append()
             try:
                 sentence_embedding.append(model[word])
             except KeyError:
@@ -234,13 +233,6 @@ def remove_empty(data, labels=None, method='bow'):
     return clean_data, clean_labels
 
 
-# data = ["I ate a cow", 'awesome, loves it. Oh fuck it is so good', 'a', 'very good']
-# labels = np.array([0, 1, 2, 3])
-# train, test = bow_features(data, data, 'en')
-# scanned, labels = remove_empty(train, labels, 'bow')
-# print(scanned, labels)
-
-
 def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1), min_df=0.01,
                     max_df=0.9, method='we', labels_name='rating', text_column='review'):
     """
@@ -304,25 +296,65 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
     return train_data, test_data
 
 
+def save_features(train_data, test_data, train_labels, test_labels, language, method):
+
+    fname = "data/features/"
+    if method == "bow":
+        sp.save_npz(fname+'train_data_bow_'+language+'.npz', train_data)
+        sp.save_npz(fname+'test_data_bow_'+language+'.npz', test_data)
+        np.save(fname+'train_labels_bow_'+language, train_labels)
+        np.save(fname+'test_labels_bow_'+language, test_labels)
+        print("Data saved.")
+
+    elif method == "we":
+        np.save(fname+'train_data_we_'+language, train_data)
+        np.save(fname+'test_data_we_'+language, test_data)
+        np.save(fname+'train_labels_we_'+language, train_labels)
+        np.save(fname+'test_labels_we_'+language, test_labels)
+        print("Data saved.")
+
+    else:
+        raise ValueError("Wrong method.")
+
+
+def load_features(language, method):
+
+    fname = "data/features/"
+    if method == "bow":
+        train_data = sp.load_npz(fname+'train_data_bow_'+language+'.npz')
+        test_data = sp.load_npz(fname+'test_data_bow_'+language+'.npz')
+        train_labels = np.ravel(np.load(fname+'train_labels_bow_'+language+'.npy'))
+        test_labels = np.ravel(np.load(fname+'test_labels_bow_'+language+'.npy'))
+        if language == 'en':
+            train_labels = np.divide(train_labels, 2.)
+            test_labels = np.divide(test_labels, 2.)
+        print("Data loaded.")
+        return train_data, test_data, train_labels, test_labels
+
+    elif method == "we":
+        train_data = np.load(fname+'train_data_we_'+language+'.npy')
+        test_data = np.load(fname+'test_data_we_'+language+'.npy')
+        train_labels = np.ravel(np.load(fname + 'train_labels_we_' + language + '.npy'))
+        test_labels = np.ravel(np.load(fname + 'test_labels_we_' + language + '.npy'))
+        if language == 'en':
+            train_labels = np.divide(train_labels, 2.)
+            test_labels = np.divide(test_labels, 2.)
+        print("Data loaded.")
+        return train_data, test_data, train_labels, test_labels
+
+    else:
+        raise ValueError("Wrong method.")
+
+
 if __name__ == '__main__':
-    pass
+
+    method = 'bow'
+    language = 'en'
+    csv_file = 'data/raw_csv/imdb.csv'
 
     t1 = time.time()
-    train_data, test_data, train_labels, test_labels = create_features('data/raw_csv/imdb.csv', 'en', method='we',
-                                                                       save_name='test.csv')
+    train_data, test_data, train_labels, test_labels = create_features(csv_file, language, method=method)
     print(train_data.shape, train_labels.shape, test_data.shape, test_labels.shape)
-    np.save('data/train_data', train_data)
-    np.save('data/test_data', test_data)
-    np.save('data/train_labels', train_labels)
-    np.save('data/test_labels', test_labels)
-    print(time.time() - t1)
 
-    # embedding_fname = 'data/word_embeddings/GoogleNews-vectors-negative300.bin'
-    # binary = True
-    # data = [["I", "eat", "a", "cow"],
-    #         ["the", "bull", "is", "dead"]]
-    # seq_len = 5
-    #
-    # X = word_embeddings(embedding_fname, binary, data, seq_len)
-    # print(X[0, 4, 0:5])
-    # print(X[0, 2, 0:5])
+    save_features(train_data, test_data, train_labels, test_labels, language, method)
+    print(time.time() - t1)
