@@ -33,15 +33,3 @@ print("Binary accuracy: {}".format(evaluate_classifier("binary_accuracy", y_test
 
 # # Save the model
 # save_classifier(classifier, model, save_file)
-
-'''
-from textblob import TextBlob
-
-testimonial = TextBlob('terrible movie. it was really boring, do not go and see it')
-labels = testimonial.sentiment
-print(labels)
-
-testimonial = TextBlob('Amazing movie, I loved seeing it. It was very fun. The actors play very well')
-labels = testimonial.sentiment
-print(labels)
-'''
