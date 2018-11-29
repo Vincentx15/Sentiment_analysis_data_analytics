@@ -407,7 +407,7 @@ if __name__ == '__main__':
     t1 = time.time()
     en, fr = wiki(csv_file)
     print(en, fr)
-    save_features(en, fr, [], [],'',method='wiki')
+    save_features(en, fr, [], [], '', method='wiki')
 
     # save_features(train_data, test_data, train_labels, test_labels, language, method)
     print(time.time() - t1)
