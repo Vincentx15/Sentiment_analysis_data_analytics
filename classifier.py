@@ -80,7 +80,11 @@ def create_classifier(classifier_type):
         raise ValueError("Wrong classifier_type defined.")
 
 
-def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_data=None, save_file=None):
+def create_random_classifier(classifier_type):
+    return
+
+
+def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_data=None, save_file=None, return_history=False):
     """
     Train the model m on the values of x_test and y_train
     :param m: model to train
@@ -90,6 +94,7 @@ def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_dat
     :param b_s: int, size of the batch
     :param validation_data: tuple of array, validation set
     :param save_file: string, where to save the file
+    :param return_history: if True, return the history
     :return: trained model
     """
     if classifier_type == "SVM":
@@ -99,10 +104,13 @@ def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_dat
 
     elif classifier_type in ["NN", "LSTM"]:
         checkpoint = ModelCheckpoint(save_file, save_best_only=True)
-        stopping = EarlyStopping(min_delta=0.1, patience=5)
-        m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data, callbacks=[checkpoint, stopping])
+        stopping = EarlyStopping(min_delta=0.1, patience=3)
+        history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data, callbacks=[checkpoint, stopping])
         print("Model trained.")
-        return m
+        if return_history:
+            return m, history
+        else:
+            return m
 
     else:
         raise ValueError("Wrong classifier.")
