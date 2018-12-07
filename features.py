@@ -321,7 +321,7 @@ def wiki(input_path, method='we', seq_l=42, ngram=(1, 1), min_df=0.01,
                                            max_df=max_df)
         text_en = word_embeddings(processed_en, model=model, length_embedding=length_embedding, seq_l=seq_l)
         gc.collect()
-        print('third step')
+        print('English done')
         # French
         fname = 'data/word_embeddings/wiki.fr.vec.bin'
         bin = True
@@ -331,6 +331,7 @@ def wiki(input_path, method='we', seq_l=42, ngram=(1, 1), min_df=0.01,
         processed_fr = preprocess_tokenize(text_fr, langage='fr', ngram=ngram, min_df=min_df,
                                            max_df=max_df)
         text_fr = word_embeddings(processed_fr, model=model, length_embedding=length_embedding, seq_l=seq_l)
+        print('French done')
     else:
         raise ValueError('This is not an acceptable method !')
 
@@ -401,12 +402,11 @@ if __name__ == '__main__':
     #
     # save_features(train_data, test_data, train_labels, test_labels, language, method)
     # print(time.time() - t1)
-
     csv_file = 'data/wikipedia/samples.csv'
 
-    # t1 = time.time()
-    # en, fr = wiki(csv_file)
-    # print(en, fr)
+    t1 = time.time()
+    en, fr = wiki(csv_file)
+    print(en, fr)
     # save_features(en, fr, [], [], '', method='wiki')
     #
     # # save_features(train_data, test_data, train_labels, test_labels, language, method)
