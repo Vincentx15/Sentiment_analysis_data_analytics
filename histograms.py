@@ -11,7 +11,7 @@ from textblob import TextBlob
 language = 'en'
 
 # Compute the true values
-_, _, y_train, y_test = load_features(language, 'bow')
+*_, y_train, y_test = load_features(language, 'bow')
 y_true = np.concatenate((y_train, y_test), axis=0)
 
 classifiers = ['SVM', 'NN', 'LSTM']
@@ -41,7 +41,7 @@ results_en = np.array(results_en)
 
 sns.distplot(y_true, hist=False, kde_kws={"color": "b", "lw": 2, "label": "True"})
 for i in range(1, 3):
-    y_pred = np.load('data/saved_distributions/distributions_'+language+'_'+str(i)+'.npy')
+    y_pred = np.load('data/saved_distributions/distributions_' + language + '_' + str(i) + '.npy')
     sns.distplot(y_pred, hist=False, kde_kws={"label": classifiers[i]})
 
 sns.distplot(results_en, hist=False, kde_kws={"label": 'Textblob en'})
@@ -58,4 +58,3 @@ sns.distplot(results_en, hist=False, kde_kws={"label": 'Textblob en'})
 #
 
 plt.show()
-
