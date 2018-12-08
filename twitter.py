@@ -47,7 +47,7 @@ def search_tweets(api, query, lang, max_tweets, min_age):
     if min_age == 0:
         # Search tweets according to query and lang only
         # return [status for status in handle_error(tweepy.Cursor(api.search, q=query, lang=lang).items(max_tweets))]
-        return [status for status in (tweepy.Cursor(api.search, q=query, lang=lang).items(max_tweets))]
+        return [status for status in handle_error(tweepy.Cursor(api.search, q=query, lang=lang).items(max_tweets))]
 
     else:
         # Define the tweet date
