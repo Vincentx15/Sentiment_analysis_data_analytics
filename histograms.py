@@ -8,6 +8,7 @@ import pandas as pd
 
 from textblob import TextBlob
 
+'''
 language = 'en'
 
 # Compute the true values
@@ -58,3 +59,17 @@ sns.distplot(results_en, hist=False, kde_kws={"label": 'Textblob en'})
 #
 
 plt.show()
+'''
+
+'''
+distrib_en = np.load('data/wikipedia/results/en.npy')
+distrib_fr = np.load('data/wikipedia/results/fr.npy')
+
+print('en', np.mean(distrib_en), 'fr', np.mean(distrib_fr))
+# en 3.7348151 fr 3.4951324
+
+
+sns.distplot(distrib_en, hist=False, kde_kws={"color": "b", "lw": 2, "label": "Fr"})
+sns.distplot(distrib_fr, hist=False, kde_kws={"color": "r", "lw": 2, "label": "En"})
+plt.show()
+'''

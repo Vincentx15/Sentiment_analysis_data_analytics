@@ -85,25 +85,7 @@ def handle_error(Cursor):
                 print("{}/15...".format((t + 1) * 5))
 
 
-import numpy as np
-import seaborn as sns
 
-
-def test_stable(embeddings, regressor):
-    """
-    takes a list of embeddings and compare sentiment distributions
-    :return:
-    """
-    embeddings = np.asarray(embeddings)
-    embeddings = np.random.shuffle(embeddings)
-    n = len(embeddings)
-    subset = embeddings[:int(n * 0.7)]
-
-    total = regressor.predict(embeddings)
-    partial = regressor.predict(subset)
-    sns.distplot(total, hist=False, rug=True)
-    sns.distplot(partial, hist=False, rug=True)
-    sns.plt.show()
 
 
 if __name__ == '__main__':
@@ -111,13 +93,12 @@ if __name__ == '__main__':
     file = "twitter"  # No need to specify the folder or the file extension
     query = "*"  # Query ("*" means everything)
     lang = "fr"  # Language in the query
-    max_tweets = 1000  # Max number of tweets
+    max_tweets = 1  # Max number of tweets
     min_age = 0  # Min age of the tweets in days (0 means most recent tweets)
-
 
     api = load_api('data/twitter/twitter_keys.txt')
     i = 0
-    while True:
+    while i < 10:
         i += 1
         lang = "fr"
         name = 'data/twitter/' + lang + '_' + str(i) + '_' + 'all' + '.txt'
@@ -132,7 +113,6 @@ if __name__ == '__main__':
     # Complete the filename
 
     # Load twitter's api
-
 
     # Search tweets specified by the query
 

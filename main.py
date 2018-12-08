@@ -1,5 +1,6 @@
 from classifier import *
 from features import load_features
+import seaborn as sns
 
 # Parameters
 classifier = 'LSTM'
@@ -38,23 +39,22 @@ language = 'fr'
 Wiki Sampling
 Read the wiki embeddings and compute distributions on it
 '''
-classifier = 'LSTM'
-method = 'we'
-language = 'en'
-load_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
+# classifier = 'LSTM'
+# method = 'we'
+# language = 'en'
+# load_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
 # en_model = load_classifier(classifier, load_file)
-
-en_wiki = np.load('data/wikipedia/en.npy')
-
-print(en_wiki)
-
-
+# en_wiki = np.load('data/wikipedia/en.npy')
+# # print(en_wiki.shape)
 # en_distrib = predict_classifier(en_model, en_wiki)
 # np.save('en', en_distrib)
-#
+
+# classifier = 'LSTM'
+# method = 'we'
 # language = 'fr'
 # load_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
 # fr_model = load_classifier(classifier, load_file)
 # fr_wiki = np.load('data/wikipedia/fr.npy')
 # fr_distrib = predict_classifier(fr_model, fr_wiki)
 # np.save('fr', fr_distrib)
+
