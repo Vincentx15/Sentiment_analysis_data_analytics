@@ -9,7 +9,8 @@ from keras.layers import Dense, Dropout, GRU
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 
 
-def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_data=None, save_file=None, return_history=False):
+def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_data=None, save_file=None,
+                     return_history=False, callback=True):
     """
     Train the model m on the values of x_test and y_train
     :param m: model to train
@@ -28,10 +29,13 @@ def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_dat
         return
 
     elif classifier_type in ["NN", "LSTM"]:
-        checkpoint = ModelCheckpoint(save_file, save_best_only=True)
-        stopping = EarlyStopping(min_delta=0.1, patience=3)
-        history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data,
-                        callbacks=[checkpoint, stopping])
+        if callback:
+            checkpoint = ModelCheckpoint(save_file, save_best_only=True)
+            stopping = EarlyStopping(min_delta=0.1, patience=3)
+            history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data,
+                            callbacks=[checkpoint, stopping])
+        else:
+            history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data)
         print("Model trained.")
         if return_history:
             return m, history
@@ -55,7 +59,7 @@ def create_random_classifier(classifier_type):
         input_dim = 1573
 
         # Random parameters
-        possible_loss = ['mean_squared_error', 'mean_absolute_error']
+        possible_loss = ['mean_squared_error']
         possible_layers_nb = range(1, 5)
         possible_layers_range = [2, 512]
         possible_activations = ['relu', 'tanh', 'softmax', 'elu', 'sigmoid', 'linear']
@@ -102,23 +106,21 @@ def create_random_classifier(classifier_type):
         possible_units_range = [8, 64]
         possible_activations = ['relu', 'tanh', 'softmax', 'elu', 'sigmoid', 'linear']
         possible_dropouts_range = [0., 0.5]
-        possible_loss = ['mean_squared_error', 'mean_absolute_error']
+        possible_loss = ['mean_squared_error']
         possible_optimizer = ['RMSprop', 'sgd', 'Adagrad', 'Adadelta', 'Adam']
-        possible_nn_layers_nb = range(1,4)
+        possible_nn_layers_nb = range(1, 4)
         possible_nn_layers_range = [2, 64]
 
         cells = rd.choice(possible_cells_nb)
-        print(cells)
         units = [rd.randint(possible_units_range[0], possible_units_range[1]) for _ in range(cells)]
-        return_sequences = [True for _ in range(cells-1)].append([False])
-        print(return_sequences)
+        return_sequences = [True for _ in range(cells-1)] + [False]
         activations = [rd.choice(possible_activations) for _ in range(cells)]
         dropouts = [rd.uniform(possible_dropouts_range[0], possible_dropouts_range[1]) for _ in range(cells)]
         loss = rd.choice(possible_loss)
         optimizer = rd.choice(possible_optimizer)
         nn_layers_nb = rd.choice(possible_nn_layers_nb)
-        nn_layers = [rd.randint(possible_nn_layers_range[0], possible_nn_layers_range[1]) for _ in range(nn_layers_nb-1)].append(1)
-        nn_activations = [rd.choice(possible_activations) for _ in range(nn_layers_nb-1)].append('relu')
+        nn_layers = [rd.randint(possible_nn_layers_range[0], possible_nn_layers_range[1]) for _ in range(nn_layers_nb-1)]+[1]
+        nn_activations = [rd.choice(possible_activations) for _ in range(nn_layers_nb-1)]+['relu']
 
         # Define the info
         info = {
@@ -140,7 +142,7 @@ def create_random_classifier(classifier_type):
                   return_sequences=return_sequences[0]))
         for i in range(1, cells):
             m.add(GRU(units=units[i], activation=activations[i], dropout=dropouts[i], return_sequences=return_sequences[i]))
-        for i in range(len(nn_layers)):
+        for i in range(nn_layers_nb):
             m.add(Dense(units=nn_layers[i], activation=nn_activations[i]))
         m.compile(loss=loss, optimizer=optimizer, metrics=['mean_squared_error'])
 

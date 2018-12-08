@@ -29,7 +29,7 @@ def load_api(fname):
     with open(fname) as f:
         # Read keys one by one
         for line in f:
-            keys.extend([line])
+            keys.extend([line.split('\n')[0]])
     [consumer_key, consumer_secret, access_token, access_secret] = keys
 
     # Authentication in Twitter
@@ -46,12 +46,13 @@ def search_tweets(api, query, lang, max_tweets, min_age):
     '''
     if min_age == 0:
         # Search tweets according to query and lang only
-        return [status for status in handle_error(tweepy.Cursor(api.search, q=query, lang=lang).items(max_tweets))]
+        # return [status for status in handle_error(tweepy.Cursor(api.search, q=query, lang=lang).items(max_tweets))]
+        return [status for status in (tweepy.Cursor(api.search, q=query, lang=lang).items(max_tweets))]
 
     else:
         # Define the tweet date
         td = datetime.datetime.now() - datetime.timedelta(days=min_age - 1)
-        tweet_date = '{0}-{1:0>2}-{2:0>2}'.format(td.year, td.month, td.day)
+        tweet_date = '{0}-{1:0>2}-{2:0>2}'.format(td. year, td.month, td.day)
 
         # Search tweets according to query and lang
         return [status for status in
@@ -67,7 +68,7 @@ def write_csv(fname, tweets):
         # Process tweet by tweet
         for tweet in tweets:
             # Save it as a csv
-            f.write(str(tweet['id']) + ', ' + tweet['text'].replace("\n", "") + '\n')
+            f.write(str(tweet._json['id']) + ', ' + tweet._json['text'].replace("\n", "") + '\n')
     return
 
 
@@ -108,14 +109,15 @@ def test_stable(embeddings, regressor):
 
 if __name__ == '__main__':
     # parameters
-    file = "twitter"  # No need to specify the folder or the file extension
+    file = "twitter2"  # No need to specify the folder or the file extension
     query = "*"  # Query ("*" means everything)
     lang = "fr"  # Language in the query
-    max_tweets = 1000  # Max number of tweets
+    max_tweets = 100  # Max number of tweets
     min_age = 0  # Min age of the tweets in days (0 means most recent tweets)
 
-
+    # Load twitter's api
     api = load_api('data/twitter/twitter_keys.txt')
+    '''
     i = 0
     while True:
         i += 1
@@ -128,13 +130,15 @@ if __name__ == '__main__':
         name = 'data/twitter/' + lang + '_' + str(i) + '_' + 'all' + '.txt'
         tweets = search_tweets(api, query, lang, max_tweets, min_age)
         write_csv(name, tweets)
+    '''
 
     # Complete the filename
-
-    # Load twitter's api
-
+    fname = complete_filename(file, query, lang, max_tweets)
 
     # Search tweets specified by the query
+    tweets = search_tweets(api, query, lang, max_tweets, min_age)
 
     # Write the tweets in a json file
-    # write_csv(fname, tweets)
+    write_csv(fname, tweets)
+
+    # api.update_status(status='Test')

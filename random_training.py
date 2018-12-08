@@ -6,8 +6,8 @@ from features import load_features
 classifier = 'LSTM'
 method = 'we'
 language = 'fr'
-duration = 3600*1
-epochs = 20
+duration = 3600*1/10
+epochs = 3
 batch_size = 32
 
 # Initialization
@@ -25,8 +25,9 @@ while (t.time()-t0) <= duration:
     new_model, new_info = create_random_classifier(classifier)
 
     # Train the classifier
-    new_model, history = train_classifier(classifier, new_model, x_train, y_train, epochs, batch_size, validation_data,
-                                          True)
+    new_model, history = train_classifier(classifier, new_model, x_train, y_train, epochs, batch_size,
+                                          validation_data=validation_data, save_file=None, return_history=True,
+                                          callback=False)
     val_mse = history.history['val_mean_squared_error']
     new_mse, new_epochs = min(val_mse), np.argmin(val_mse) + 1
 
