@@ -108,37 +108,35 @@ def test_stable(embeddings, regressor):
 
 
 if __name__ == '__main__':
+
     # parameters
-    file = "twitter2"  # No need to specify the folder or the file extension
+    file = "twitter_server"  # No need to specify the folder or the file extension
     query = "*"  # Query ("*" means everything)
     lang = "fr"  # Language in the query
-    max_tweets = 100  # Max number of tweets
+    max_tweets = 1000  # Max number of tweets
     min_age = 0  # Min age of the tweets in days (0 means most recent tweets)
 
     # Load twitter's api
     api = load_api('data/twitter/twitter_keys.txt')
-    '''
+
     i = 0
     while True:
         i += 1
         lang = "fr"
-        name = 'data/twitter/' + lang + '_' + str(i) + '_' + 'all' + '.txt'
+        fname = complete_filename(file+'_'+str(i)+'_', query, lang, max_tweets)
         tweets = search_tweets(api, query, lang, max_tweets, min_age)
-        write_csv(name, tweets)
+        write_csv(fname, tweets)
 
         lang = "en"
-        name = 'data/twitter/' + lang + '_' + str(i) + '_' + 'all' + '.txt'
+        fname = complete_filename(file+'_'+str(i)+'_', query, lang, max_tweets)
         tweets = search_tweets(api, query, lang, max_tweets, min_age)
-        write_csv(name, tweets)
+        write_csv(fname, tweets)
+
+
     '''
-
-    # Complete the filename
-    fname = complete_filename(file, query, lang, max_tweets)
-
     # Search tweets specified by the query
     tweets = search_tweets(api, query, lang, max_tweets, min_age)
 
     # Write the tweets in a json file
     write_csv(fname, tweets)
-
-    # api.update_status(status='Test')
+    '''
