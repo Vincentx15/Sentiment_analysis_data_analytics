@@ -4,7 +4,6 @@ import time
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from scipy.sparse import hstack, csr_matrix
-import gc
 
 # we
 from gensim.models import KeyedVectors as Kv
@@ -158,13 +157,17 @@ def word_embeddings(preprocessed_data, model, length_embedding, seq_l):
 
             # Remove elements if necessary
             if len(sentence_embedding) >= seq_l:
-                x.append(sentence_embedding[0:seq_l])
+                sentence_embedding = np.asarray(sentence_embedding[0:seq_l])
+                x.append(sentence_embedding)
 
             # Perform zero-padding if necessary
             else:
                 for i in range(seq_l - len(sentence_embedding)):
                     sentence_embedding.append(np.zeros(length_embedding))
+
+                sentence_embedding = np.asarray(sentence_embedding)
                 x.append(sentence_embedding)
+
         else:
             x.append([])
 
@@ -203,22 +206,36 @@ def we_features(raw_train_data, raw_test_data, langage, seq_l, ngram=(1, 1), min
     return train_data, test_data
 
 
-def remove_empty(data, labels=None, method='bow'):
+def remove_empty(data, labels=None, list_labels=None, method='bow'):
     """
     :data the data to clean
     :param method: string for the method
     :return: clean data and clean labels if some are provided
     """
-    gc.collect()
     if method == 'we':
         iloc = []
         for id, item in enumerate(data):
-            if not item:
+            if len(item) == 0:
                 iloc.append(id)
-        clean_data = np.asarray([x for i, x in enumerate(data) if i not in iloc])
-        if labels is not None:
-            clean_labels = np.delete(labels, iloc)
+        if labels == 'wiki':
+            iloc_label = []
+            for id, item in enumerate(list_labels):
+                # print(item)
+                if len(item) == 0:
+                    iloc_label.append(id)
+            iloc = set(iloc)
+            iloc_label = set(iloc_label)
+            iloc_selected = list(iloc_label.union(iloc))
+            clean_data = np.delete(np.asarray(data), iloc_selected)
+            clean_data = np.stack(clean_data)
+            clean_labels = np.delete(np.asarray(list_labels), iloc_selected)
+            clean_labels = np.stack(clean_labels)
+
+        elif labels is not None:
+            clean_data = np.asarray([x for i, x in enumerate(data) if i not in iloc])
+            clean_labels = np.delete(np.asarray(list_labels), iloc)
         else:
+            clean_data = np.asarray([x for i, x in enumerate(data) if i not in iloc])
             return clean_data
 
     elif method == 'bow':
@@ -230,6 +247,7 @@ def remove_empty(data, labels=None, method='bow'):
             return clean_data
     else:
         raise ValueError('This is not an acceptable method !')
+
     return clean_data, clean_labels
 
 
@@ -263,7 +281,6 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
     if method == 'we':
         train_data, test_data = we_features(raw_train_data, raw_test_data, langage, seq_l, ngram=ngram, min_df=min_df,
                                             max_df=max_df)
-        gc.collect()
     elif method == 'bow':
         train_data, test_data = bow_features(raw_train_data, raw_test_data, langage,
                                              ngram=ngram, min_df=min_df, max_df=max_df)
@@ -320,8 +337,7 @@ def wiki(input_path, method='we', seq_l=42, ngram=(1, 1), min_df=0.01,
         processed_en = preprocess_tokenize(text_en, langage='en', ngram=ngram, min_df=min_df,
                                            max_df=max_df)
         text_en = word_embeddings(processed_en, model=model, length_embedding=length_embedding, seq_l=seq_l)
-        gc.collect()
-        print('English done')
+        print('third step')
         # French
         fname = 'data/word_embeddings/wiki.fr.vec.bin'
         bin = True
@@ -335,8 +351,7 @@ def wiki(input_path, method='we', seq_l=42, ngram=(1, 1), min_df=0.01,
     else:
         raise ValueError('This is not an acceptable method !')
 
-    text_en, text_fr = remove_empty(text_en, text_fr, method)
-    text_fr, text_en = remove_empty(text_fr, text_en, method)
+    text_en, text_fr = remove_empty(data = text_en,labels='wiki', list_labels=text_fr, method='we')
 
     return text_en, text_fr
 
@@ -356,6 +371,7 @@ def save_features(train_data, test_data, train_labels, test_labels, language, me
         np.save(fname + 'train_labels_we_' + language, train_labels)
         np.save(fname + 'test_labels_we_' + language, test_labels)
         print("Data saved.")
+
     elif method == "wiki":
         np.save(fname + 'en', train_data)
         np.save(fname + 'fr', test_data)
@@ -406,8 +422,11 @@ if __name__ == '__main__':
 
     t1 = time.time()
     en, fr = wiki(csv_file)
-    print(en, fr)
-    # save_features(en, fr, [], [], '', method='wiki')
-    #
-    # # save_features(train_data, test_data, train_labels, test_labels, language, method)
+    # print(en, fr)
+    save_features(en, fr, [], [], '', method='wiki')
+
+    # save_features(train_data, test_data, train_labels, test_labels, language, method)
     # print(time.time() - t1)
+    A = np.load('data/features/en.npy')
+    print(A.shape)
+

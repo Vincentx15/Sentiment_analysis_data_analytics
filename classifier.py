@@ -1,4 +1,5 @@
 import numpy as np
+import random as rd
 import math
 from joblib import dump, load
 from sklearn import svm
@@ -6,6 +7,149 @@ from sklearn.metrics import accuracy_score, mean_squared_error
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, GRU
 from keras.callbacks import ModelCheckpoint, EarlyStopping
+
+
+def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_data=None, save_file=None,
+                     return_history=False, callback=True):
+    """
+    Train the model m on the values of x_test and y_train
+    :param m: model to train
+    :param x: array, train set
+    :param y: array, label set
+    :param ep: int, epochs
+    :param b_s: int, size of the batch
+    :param validation_data: tuple of array, validation set
+    :param save_file: string, where to save the file
+    :param return_history: if True, return the history
+    :return: trained model
+    """
+    if classifier_type == "SVM":
+        m.fit(x, y)
+        print("Model trained.")
+        return
+
+    elif classifier_type in ["NN", "LSTM"]:
+        if callback:
+            checkpoint = ModelCheckpoint(save_file, save_best_only=True)
+            stopping = EarlyStopping(min_delta=0.1, patience=3)
+            history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data,
+                            callbacks=[checkpoint, stopping])
+        else:
+            history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data)
+        print("Model trained.")
+        if return_history:
+            return m, history
+        else:
+            return m
+
+    else:
+        raise ValueError("Wrong classifier.")
+
+
+def create_random_classifier(classifier_type):
+    """
+    Return a compiled classifier with random parameters
+    :param classifier_type: string, define which classifier to use
+    :return: untrained classifier
+    """
+
+    if classifier_type == "NN":
+
+        # Fixed parameters
+        input_dim = 1573
+
+        # Random parameters
+        possible_loss = ['mean_squared_error']
+        possible_layers_nb = range(1, 5)
+        possible_layers_range = [2, 512]
+        possible_activations = ['relu', 'tanh', 'softmax', 'elu', 'sigmoid', 'linear']
+        possible_dropouts_range = [0., 0.5]
+        possible_optimizer = ['sgd', 'Adagrad', 'Adadelta', 'Adam']
+
+        layers_nb = rd.choice(possible_layers_nb)
+        layers = [rd.randint(possible_layers_range[0], possible_layers_range[1]) for _ in range(layers_nb-1)]
+        activations = [rd.choice(possible_activations) for _ in range(layers_nb-1)]
+        dropouts = [rd.uniform(possible_dropouts_range[0], possible_dropouts_range[1]) for _ in range(layers_nb-1)]
+        loss = rd.choice(possible_loss)
+        optimizer = rd.choice(possible_optimizer)
+
+        # Define the info
+        info = {
+            'layers_nb': layers_nb,
+            'layers': layers,
+            'activations': activations,
+            'dropouts': dropouts,
+            'loss': loss,
+            'optimizer': optimizer
+        }
+
+        # Create model
+        m = Sequential()
+        m.add(Dense(units=layers[0], activation=activations[0], input_dim=input_dim))
+        m.add(Dropout(dropouts[0]))
+        for i in range(1, layers_nb-1):
+            m.add(Dense(units=layers[i], activation=activations[i]))
+            m.add(Dropout(dropouts[i]))
+        m.add(Dense(units=1, activation='relu'))
+        m.compile(loss=loss, optimizer=optimizer, metrics=['mean_squared_error'])
+
+        print("Random model created.")
+        return m, info
+
+    elif classifier_type == "LSTM":
+
+        # Fixed parameters
+        input_shape = (42, 300)
+
+        # Random parameters
+        possible_cells_nb = range(1, 4)
+        possible_units_range = [8, 64]
+        possible_activations = ['relu', 'tanh', 'softmax', 'elu', 'sigmoid', 'linear']
+        possible_dropouts_range = [0., 0.5]
+        possible_loss = ['mean_squared_error']
+        possible_optimizer = ['RMSprop', 'sgd', 'Adagrad', 'Adadelta', 'Adam']
+        possible_nn_layers_nb = range(1, 4)
+        possible_nn_layers_range = [2, 64]
+
+        cells = rd.choice(possible_cells_nb)
+        units = [rd.randint(possible_units_range[0], possible_units_range[1]) for _ in range(cells)]
+        return_sequences = [True for _ in range(cells-1)] + [False]
+        activations = [rd.choice(possible_activations) for _ in range(cells)]
+        dropouts = [rd.uniform(possible_dropouts_range[0], possible_dropouts_range[1]) for _ in range(cells)]
+        loss = rd.choice(possible_loss)
+        optimizer = rd.choice(possible_optimizer)
+        nn_layers_nb = rd.choice(possible_nn_layers_nb)
+        nn_layers = [rd.randint(possible_nn_layers_range[0], possible_nn_layers_range[1]) for _ in range(nn_layers_nb-1)]+[1]
+        nn_activations = [rd.choice(possible_activations) for _ in range(nn_layers_nb-1)]+['relu']
+
+        # Define the info
+        info = {
+            'cells': cells,
+            'units': units,
+            'return_sequences': return_sequences,
+            'activations': activations,
+            'dropouts': dropouts,
+            'loss': loss,
+            'optimizer': optimizer,
+            'nn_layers_nb': nn_layers_nb,
+            'nn_layers': nn_layers,
+            'nn_activations': nn_activations
+        }
+
+        # Create model
+        m = Sequential()
+        m.add(GRU(input_shape=input_shape, units=units[0], activation=activations[0], dropout=dropouts[0],
+                  return_sequences=return_sequences[0]))
+        for i in range(1, cells):
+            m.add(GRU(units=units[i], activation=activations[i], dropout=dropouts[i], return_sequences=return_sequences[i]))
+        for i in range(nn_layers_nb):
+            m.add(Dense(units=nn_layers[i], activation=nn_activations[i]))
+        m.compile(loss=loss, optimizer=optimizer, metrics=['mean_squared_error'])
+
+        print("Model created.")
+        return m, info
+    else:
+        raise ValueError("Wrong classifier_type defined.")
 
 
 def create_classifier(classifier_type):
@@ -78,42 +222,6 @@ def create_classifier(classifier_type):
 
     else:
         raise ValueError("Wrong classifier_type defined.")
-
-
-def create_random_classifier(classifier_type):
-    return
-
-
-def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_data=None, save_file=None, return_history=False):
-    """
-    Train the model m on the values of x_test and y_train
-    :param m: model to train
-    :param x: array, train set
-    :param y: array, label set
-    :param ep: int, epochs
-    :param b_s: int, size of the batch
-    :param validation_data: tuple of array, validation set
-    :param save_file: string, where to save the file
-    :param return_history: if True, return the history
-    :return: trained model
-    """
-    if classifier_type == "SVM":
-        m.fit(x, y)
-        print("Model trained.")
-        return
-
-    elif classifier_type in ["NN", "LSTM"]:
-        checkpoint = ModelCheckpoint(save_file, save_best_only=True)
-        stopping = EarlyStopping(min_delta=0.1, patience=3)
-        history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data, callbacks=[checkpoint, stopping])
-        print("Model trained.")
-        if return_history:
-            return m, history
-        else:
-            return m
-
-    else:
-        raise ValueError("Wrong classifier.")
 
 
 def predict_classifier(m, x):
@@ -189,6 +297,7 @@ def load_classifier(classifier_type, fname):
         raise ValueError("Wrong classifier_type defined.")
 
 
+'''
 if __name__ == '__main__':
 
     # Parameters
@@ -200,3 +309,4 @@ if __name__ == '__main__':
     # Save model
     save_file = 'data/model/untrained_' + classifier  # String, name of the file to save/load with no extension
     save_classifier(classifier, model, save_file)
+'''
