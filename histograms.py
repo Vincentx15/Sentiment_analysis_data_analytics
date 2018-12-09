@@ -1,5 +1,6 @@
 from classifier import *
 from features import load_features
+from statistics import mode
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -73,3 +74,35 @@ sns.distplot(distrib_en, hist=False, kde_kws={"color": "b", "lw": 2, "label": "F
 sns.distplot(distrib_fr, hist=False, kde_kws={"color": "r", "lw": 2, "label": "En"})
 plt.show()
 '''
+
+
+# Histogram of the length of the reviews
+from features import *
+
+method = 'we'
+langages = ['en', 'fr']
+csv_files = ['data/raw_csv/imdb.csv', 'data/raw_csv/allocine.csv']
+
+for i in range(0,1):
+    langage = langages[i]
+    csv_file = csv_files[i]
+
+    data = pd.read_csv(csv_file)
+    text = data['review'].values
+    labels = data['rating'].values
+
+    # split data
+    raw_train_data, raw_test_data, train_labels, test_labels = train_test_split(text, labels,
+                                                                                test_size=0.33, random_state=42)
+
+    # Do the appropriate embedding on the text
+    processed_train_data = preprocess_tokenize(raw_train_data, langage=langage)
+    processed_test_data = preprocess_tokenize(raw_test_data, langage=langage)
+
+    processed_data = processed_train_data + processed_test_data
+    preprocessed_length = [len(data) for data in processed_data]
+
+    sns.distplot(preprocessed_length)
+    plt.show()
+
+    print("Mean: {}; mode: {}".format(round(np.mean(preprocessed_length), 2), round(mode(preprocessed_length), 2)))

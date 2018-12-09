@@ -3,11 +3,9 @@ import numpy as np
 import time
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from scipy.sparse import hstack, csr_matrix
 
 # we
 from gensim.models import KeyedVectors as Kv
-from gensim.models import FastText
 
 # bow
 from sklearn.feature_extraction.text import CountVectorizer
@@ -21,18 +19,11 @@ import scipy.sparse as sp
 stop_words_fr = get_stop_words('fr')
 stop_words_en = get_stop_words('en')
 
+
 '''
 bow embedding
 '''
 
-
-# def french_lemmatizer(stemmer=FrenchStemmer):
-#     token_pattern = re.compile(r"(?u)\b\w\w+\b")
-#     return lambda doc: list(map(stemmer.stem, token_pattern.findall(doc)))
-
-# def english_lemmatizer(lemmatizer):
-#     token_pattern = re.compile(r"(?u)\b\w\w+\b")
-#     return lambda doc: list(map(lemmatizer.lemmatize, token_pattern.findall(doc)))[0]
 
 class FrenchLemmaTokenizer(object):
     def __init__(self):
@@ -88,14 +79,6 @@ def bow_features(raw_train_data, raw_test_data, langage, ngram=(1, 1), min_df=0.
     return train_data, test_data
 
 
-# data = ["I ate a cow", 'awesome, loves it. Oh fuck it is so good', 'a']
-# a = bow_features(data, data, 'en')
-# return a lign of zeroes if it is empty
-# data = ["J'ai mangé une vache", "Génial, j'adore. Oh putain c'est tellement bon"]
-# a = bow_features(data, data, 'fr')
-# print(a)
-
-
 '''
 we method
 '''
@@ -125,11 +108,6 @@ def preprocess_tokenize(data, langage, ngram=(1, 1), min_df=0.01, max_df=0.9):
     analyzer = vectorizer.build_analyzer()
     processed = [analyzer(doc) if (doc not in [np.NaN, np.nan]) else [] for doc in data]
     return processed
-
-
-# data = ["I ate a cow", 'awesome, loves it. Oh fuck it is so good']
-# a = preprocess_tokenize(data, 'en')
-# print(a)
 
 
 def word_embeddings(preprocessed_data, model, length_embedding, seq_l):
@@ -182,13 +160,13 @@ def we_features(raw_train_data, raw_test_data, langage, seq_l, ngram=(1, 1), min
     # Load the pretrained model
     if langage == 'en':
         fname = 'data/word_embeddings/wiki.en.vec.bin'
-        bin = True
-        model = Kv.load_word2vec_format(fname, binary=bin)
+        binary = True
+        model = Kv.load_word2vec_format(fname, binary=binary)
         length_embedding = len(model['hello'])
     elif langage == 'fr':
         fname = 'data/word_embeddings/wiki.fr.vec.bin'
-        bin = True
-        model = Kv.load_word2vec_format(fname, binary=bin)
+        binary = True
+        model = Kv.load_word2vec_format(fname, binary=binary)
         length_embedding = len(model['bonjour'])
     else:
         raise ValueError('Wrong language ! ')
@@ -408,16 +386,17 @@ def load_features(language, method):
 
 
 if __name__ == '__main__':
-    # method = 'bow'
-    # language = 'en'
-    # csv_file = 'data/raw_csv/imdb.csv'
-    #
-    # t1 = time.time()
-    # train_data, test_data, train_labels, test_labels = create_features(csv_file, language, method=method)
-    # print(train_data.shape, train_labels.shape, test_data.shape, test_labels.shape)
-    #
-    # save_features(train_data, test_data, train_labels, test_labels, language, method)
-    # print(time.time() - t1)
+    method = 'we'
+    language = 'en'
+    csv_file = 'data/raw_csv/imdb.csv'
+
+    t1 = time.time()
+    train_data, test_data, train_labels, test_labels = create_features(csv_file, language, method=method, seq_l=100)
+    print(train_data.shape, train_labels.shape, test_data.shape, test_labels.shape)
+
+    save_features(train_data, test_data, train_labels, test_labels, language, method)
+    print(time.time() - t1)
+    """
     csv_file = 'data/wikipedia/samples.csv'
 
     t1 = time.time()
@@ -429,4 +408,4 @@ if __name__ == '__main__':
     # print(time.time() - t1)
     A = np.load('data/features/en.npy')
     print(A.shape)
-
+    """
