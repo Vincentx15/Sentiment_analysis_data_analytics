@@ -31,7 +31,7 @@ def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_dat
     elif classifier_type in ["NN", "LSTM"]:
         if callback:
             checkpoint = ModelCheckpoint(save_file, save_best_only=True)
-            stopping = EarlyStopping(min_delta=0.1, patience=3)
+            stopping = EarlyStopping(min_delta=0.01, patience=3)
             history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data,
                             callbacks=[checkpoint, stopping], verbose=verbose)
         else:
@@ -105,7 +105,7 @@ def create_random_classifier(classifier_type):
         possible_activations = ['relu', 'tanh', 'softmax', 'elu', 'sigmoid', 'linear']
         possible_dropouts = np.arange(0.0, 0.6, 0.1)
         possible_optimizer = ['RMSprop', 'sgd', 'Adagrad', 'Adadelta', 'Adam']
-
+        """
         cells = rd.choice(possible_cells_nb)
         units = rd.sample(possible_units, cells)
         units.sort(reverse=True)
@@ -116,7 +116,7 @@ def create_random_classifier(classifier_type):
 
         nn_input_size = units[-1]
         possible_nn_layers_nb = [k for k in range(1, 4) if (2**(k-1) <= nn_input_size)]
-        possible_nn_layers = [2**k for k in range(0, 7) if (2**k <= nn_input_size)]
+        possible_nn_layers = [2**k for k in range(1, 7) if (2**k <= nn_input_size)]
 
         if nn_input_size == 1:
             nn_layers_nb = 0
@@ -127,6 +127,18 @@ def create_random_classifier(classifier_type):
             nn_layers = rd.sample(possible_nn_layers, nn_layers_nb-1)+[1]
             nn_layers.sort(reverse=True)
             nn_activations = [rd.choice(possible_activations) for _ in range(nn_layers_nb-1)]+['relu']
+        """
+        ###
+        cells = 2
+        units = [16, 4]
+        return_sequences = [True, False]
+        activations = ['tanh', 'linear']
+        dropout = 0.2
+        optimizer = 'RMSprop'
+        nn_layers_nb = 1
+        nn_layers = [1]
+        nn_activations = ['relu']
+        ###
 
         # Define the info
         info = {
@@ -134,7 +146,7 @@ def create_random_classifier(classifier_type):
             'units': units,
             'return_sequences': return_sequences,
             'activations': activations,
-            'dropouts': dropout,
+            'dropout': dropout,
             'optimizer': optimizer,
             'nn_layers_nb': nn_layers_nb,
             'nn_layers': nn_layers,
