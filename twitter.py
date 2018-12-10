@@ -15,9 +15,9 @@ def complete_filename(file, query, lang, max_tweets):
     Complete the filename by adding the folder, the extansion, etc
     '''
     if query == "*":
-        return 'data/twitter/' + file + '_' + lang + '_' + str(max_tweets) + '_' + 'all' + '.txt'
+        return 'data/twitter2/' + file + '_' + lang + '_' + str(max_tweets) + '_' + 'all' + '.txt'
     else:
-        return 'data/twitter/' + file + '_' + lang + '_' + str(max_tweets) + '_' + query + '.txt'
+        return 'data/twitter2/' + file + '_' + lang + '_' + str(max_tweets) + '_' + query + '.txt'
 
 
 def load_api(fname):
