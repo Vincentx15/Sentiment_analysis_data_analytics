@@ -3,11 +3,9 @@ import numpy as np
 import time
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from scipy.sparse import hstack, csr_matrix
 
 # we
 from gensim.models import KeyedVectors as Kv
-from gensim.models import FastText
 
 # bow
 from sklearn.feature_extraction.text import CountVectorizer
@@ -21,18 +19,11 @@ import scipy.sparse as sp
 stop_words_fr = get_stop_words('fr')
 stop_words_en = get_stop_words('en')
 
+
 '''
 bow embedding
 '''
 
-
-# def french_lemmatizer(stemmer=FrenchStemmer):
-#     token_pattern = re.compile(r"(?u)\b\w\w+\b")
-#     return lambda doc: list(map(stemmer.stem, token_pattern.findall(doc)))
-
-# def english_lemmatizer(lemmatizer):
-#     token_pattern = re.compile(r"(?u)\b\w\w+\b")
-#     return lambda doc: list(map(lemmatizer.lemmatize, token_pattern.findall(doc)))[0]
 
 class FrenchLemmaTokenizer(object):
     def __init__(self):
@@ -88,14 +79,6 @@ def bow_features(raw_train_data, raw_test_data, langage, ngram=(1, 1), min_df=0.
     return train_data, test_data
 
 
-# data = ["I ate a cow", 'awesome, loves it. Oh fuck it is so good', 'a']
-# a = bow_features(data, data, 'en')
-# return a lign of zeroes if it is empty
-# data = ["J'ai mangé une vache", "Génial, j'adore. Oh putain c'est tellement bon"]
-# a = bow_features(data, data, 'fr')
-# print(a)
-
-
 '''
 we method
 '''
@@ -125,11 +108,6 @@ def preprocess_tokenize(data, langage, ngram=(1, 1), min_df=0.01, max_df=0.9):
     analyzer = vectorizer.build_analyzer()
     processed = [analyzer(doc) if (doc not in [np.NaN, np.nan]) else [] for doc in data]
     return processed
-
-
-# data = ["I ate a cow", 'awesome, loves it. Oh fuck it is so good']
-# a = preprocess_tokenize(data, 'en')
-# print(a)
 
 
 def word_embeddings(preprocessed_data, model, length_embedding, seq_l):
@@ -182,13 +160,13 @@ def we_features(raw_train_data, raw_test_data, langage, seq_l, ngram=(1, 1), min
     # Load the pretrained model
     if langage == 'en':
         fname = 'data/word_embeddings/wiki.en.vec.bin'
-        bin = True
-        model = Kv.load_word2vec_format(fname, binary=bin)
+        binary = True
+        model = Kv.load_word2vec_format(fname, binary=binary)
         length_embedding = len(model['hello'])
     elif langage == 'fr':
         fname = 'data/word_embeddings/wiki.fr.vec.bin'
-        bin = True
-        model = Kv.load_word2vec_format(fname, binary=bin)
+        binary = True
+        model = Kv.load_word2vec_format(fname, binary=binary)
         length_embedding = len(model['bonjour'])
     else:
         raise ValueError('Wrong language ! ')
@@ -257,7 +235,7 @@ def remove_empty(data, labels=None, list_labels=None, method='bow'):
 
 
 def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1), min_df=0.01,
-                    max_df=0.9, method='we', labels_name='rating', text_column='review'):
+                    max_df=0.9, method='we', labels_name='rating', text_column='review', csv=True):
     """
     :param input_path: path of the csv to read
     :param method: method for the embedding
@@ -265,6 +243,7 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
     :param labels: name of the column to use for the labels, if none enter 0
     :return: train, test with labels
     """
+
     data = pd.read_csv(input_path)
     text = data[text_column].values
 
@@ -347,6 +326,53 @@ def wiki(input_path, method='we', seq_l=42, ngram=(1, 1), min_df=0.01,
     return text_en, text_fr
 
 
+def twitter(input_folder_path, files_nb, max_tweets, query, langage, method='we', seq_l=42):
+    """
+    Create the features for twitter files
+    :param input_folder_path:
+    :param langage:
+    :param method:
+    :param seq_l:
+    :param ngram:
+    :param min_df:
+    :param max_df:
+    :return:
+    """
+
+    fnames = [input_folder_path+'/twitter_server_'+str(i)+'__'+langage+'_'+str(max_tweets)+'_'+query+'.txt' for i in range(1, files_nb+1)]
+
+    text = []
+    for fname in fnames:
+        with open(fname, 'r', encoding="utf-8") as f:
+            file_tweets_list = f.readlines()
+            for i in range(len(file_tweets_list)):
+                file_tweets_list[i] = (file_tweets_list[i].replace("\n", "")).split(',', 2)
+                if len(file_tweets_list[i]) == 2:
+                    file_tweets_list[i] = file_tweets_list[i][1]
+                else:
+                    file_tweets_list[i] = ' '
+            text.extend(file_tweets_list)
+
+    text = np.asarray(text)
+    # careful if no labels are provided, return a np.array of shape (len(features),)
+    labels = np.zeros(text.shape)
+
+    # split data
+    raw_train_data, raw_test_data, _, _ = train_test_split(text, labels, test_size=0.33, random_state=42)
+
+    # Do the appropriate embedding on the text
+    if method == 'we':
+        train_data, test_data = we_features(raw_train_data, raw_test_data, langage, seq_l)
+    elif method == 'bow':
+        train_data, test_data = bow_features(raw_train_data, raw_test_data, langage)
+    else:
+        raise ValueError('This is not an acceptable method !')
+
+    train_data = remove_empty(train_data, method=method)
+    test_data = remove_empty(test_data, method=method)
+    return train_data, test_data
+
+
 def save_features(train_data, test_data, train_labels, test_labels, language, method):
     fname = "data/features/"
     if method == "bow":
@@ -399,16 +425,20 @@ def load_features(language, method):
 
 
 if __name__ == '__main__':
-    # method = 'bow'
-    # language = 'en'
-    # csv_file = 'data/raw_csv/imdb.csv'
-    #
-    # t1 = time.time()
-    # train_data, test_data, train_labels, test_labels = create_features(csv_file, language, method=method)
-    # print(train_data.shape, train_labels.shape, test_data.shape, test_labels.shape)
-    #
-    # save_features(train_data, test_data, train_labels, test_labels, language, method)
-    # print(time.time() - t1)
+    """
+    method = 'we'
+    language = 'en'
+    csv_file = 'data/raw_csv/imdb.csv'
+
+    t1 = time.time()
+    train_data, test_data, train_labels, test_labels = create_features(csv_file, language, method=method, seq_l=100)
+    print(train_data.shape, train_labels.shape, test_data.shape, test_labels.shape)
+
+    save_features(train_data, test_data, train_labels, test_labels, language, method)
+    print(time.time() - t1)
+    """
+
+    """
     csv_file = 'data/wikipedia/samples.csv'
 
     t1 = time.time()
@@ -420,4 +450,5 @@ if __name__ == '__main__':
     # print(time.time() - t1)
     A = np.load('data/features/en.npy')
     print(A.shape)
-
+    """
+    train_data, test_data = twitter('data/twitter_queries', 304, 1000, 'all', 'fr')

@@ -10,14 +10,18 @@ import time
 import datetime
 
 
-def complete_filename(file, query, lang, max_tweets):
+def complete_filename(file, query, lang, max_tweets, extended):
     '''
     Complete the filename by adding the folder, the extansion, etc
     '''
-    if query == "*":
-        return 'data/twitter/' + file + '_' + lang + '_' + str(max_tweets) + '_' + 'all' + '.txt'
+    if extended:
+        str_extended = '_extended'
     else:
-        return 'data/twitter/' + file + '_' + lang + '_' + str(max_tweets) + '_' + query + '.txt'
+        str_extended = ''
+    if query == "*":
+        return 'data/twitter2/' + file + '_' + lang + '_' + str(max_tweets) + '_' + 'all' + str_extended + '.txt'
+    else:
+        return 'data/twitter2/' + file + '_' + lang + '_' + str(max_tweets) + '_' + query + str_extended +'.txt'
 
 
 def load_api(fname):
@@ -40,14 +44,17 @@ def load_api(fname):
     return tweepy.API(auth)
 
 
-def search_tweets(api, query, lang, max_tweets, min_age):
+def search_tweets(api, query, lang, max_tweets, min_age, extended):
     '''
     Search the tweets specified by the parameters
     '''
     if min_age == 0:
         # Search tweets according to query and lang only
-        # return [status for status in handle_error(tweepy.Cursor(api.search, q=query, lang=lang).items(max_tweets))]
-        return [status for status in handle_error(tweepy.Cursor(api.search, q=query, lang=lang).items(max_tweets))]
+        if extended:
+            return [status for status in handle_error(
+                tweepy.Cursor(api.search, q=query, lang=lang, tweet_mode='extended').items(max_tweets))]
+        else:
+            return [status for status in handle_error(tweepy.Cursor(api.search, q=query, lang=lang).items(max_tweets))]
 
     else:
         # Define the tweet date
@@ -55,11 +62,15 @@ def search_tweets(api, query, lang, max_tweets, min_age):
         tweet_date = '{0}-{1:0>2}-{2:0>2}'.format(td. year, td.month, td.day)
 
         # Search tweets according to query and lang
-        return [status for status in
+        if extended:
+            return [status for status in
+                handle_error(tweepy.Cursor(api.search, q=query, lang=lang, until=tweet_date, tweet_mode='extended').items(max_tweets))]
+        else:
+            return [status for status in
                 handle_error(tweepy.Cursor(api.search, q=query, lang=lang, until=tweet_date).items(max_tweets))]
 
 
-def write_csv(fname, tweets):
+def write_csv(fname, tweets, extended):
     '''
     Write the tweets data in a csv
     '''
@@ -67,8 +78,16 @@ def write_csv(fname, tweets):
     with open(fname, 'w', encoding="utf-8") as f:
         # Process tweet by tweet
         for tweet in tweets:
+            if extended:
+                if 'retweeted_status' in dir(tweet):
+                    text = tweet.retweeted_status.full_text
+                else:
+                    text = tweet.full_text
+            else:
+                text = tweet._json['text']
+
             # Save it as a csv
-            f.write(str(tweet._json['id']) + ', ' + tweet._json['text'].replace("\n", "") + '\n')
+            f.write(str(tweet._json['id']) + ', ' + text.replace("\n", "") + '\n')
     return
 
 
@@ -88,30 +107,32 @@ def handle_error(Cursor):
 
 
 if __name__ == '__main__':
-    pass
-    # parameters
-    file = "twitter_server"  # No need to specify the folder or the file extension
-    query = "*"  # Query ("*" means everything)
-    lang = "fr"  # Language in the query
-    max_tweets = 1  # Max number of tweets
-    min_age = 0  # Min age of the tweets in days (0 means most recent tweets)
 
+    pass
+
+    # parameters
+    file = "twitter_server_2"  # No need to specify the folder or the file extension
+    max_tweets = 2000  # Max number of tweets
+    min_age = 0  # Min age of the tweets in days (0 means most recent tweets)
+    extended = True
 
     # Load twitter's api
     api = load_api('data/twitter/twitter_keys.txt')
 
     i = 0
-    while i < 10:
+    while True:
         i += 1
         lang = "fr"
-        fname = complete_filename(file+'_'+str(i)+'_', query, lang, max_tweets)
-        tweets = search_tweets(api, query, lang, max_tweets, min_age)
-        write_csv(fname, tweets)
+        query = "*"
+        fname = complete_filename(file+'_'+str(i)+'_', query, lang, max_tweets, extended)
+        tweets = search_tweets(api, query, lang, max_tweets, min_age, extended)
+        write_csv(fname, tweets, extended)
 
         lang = "en"
-        fname = complete_filename(file+'_'+str(i)+'_', query, lang, max_tweets)
-        tweets = search_tweets(api, query, lang, max_tweets, min_age)
-        write_csv(fname, tweets)
+        query = "*"
+        fname = complete_filename(file+'_'+str(i)+'_', query, lang, max_tweets, extended)
+        tweets = search_tweets(api, query, lang, max_tweets, min_age, extended)
+        write_csv(fname, tweets, extended)
 
     '''
     # Search tweets specified by the query

@@ -10,7 +10,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 
 
 def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_data=None, save_file=None,
-                     return_history=False, callback=True):
+                     return_history=False, callback=True, verbose=1):
     """
     Train the model m on the values of x_test and y_train
     :param m: model to train
@@ -31,11 +31,11 @@ def train_classifier(classifier_type, m, x, y, ep=None, b_s=None, validation_dat
     elif classifier_type in ["NN", "LSTM"]:
         if callback:
             checkpoint = ModelCheckpoint(save_file, save_best_only=True)
-            stopping = EarlyStopping(min_delta=0.1, patience=3)
+            stopping = EarlyStopping(min_delta=0.01, patience=3)
             history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data,
-                            callbacks=[checkpoint, stopping])
+                            callbacks=[checkpoint, stopping], verbose=verbose)
         else:
-            history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data)
+            history = m.fit(x=x, y=y, epochs=ep, batch_size=b_s, validation_data=validation_data, verbose=verbose)
         print("Model trained.")
         if return_history:
             return m, history
@@ -59,18 +59,17 @@ def create_random_classifier(classifier_type):
         input_dim = 1573
 
         # Random parameters
-        possible_loss = ['mean_squared_error']
         possible_layers_nb = range(1, 5)
-        possible_layers_range = [2, 512]
+        possible_layers = [2**k for k in range(1, 11)]
         possible_activations = ['relu', 'tanh', 'softmax', 'elu', 'sigmoid', 'linear']
-        possible_dropouts_range = [0., 0.5]
+        possible_dropouts = np.arange(0.0, 0.6, 0.1)
         possible_optimizer = ['sgd', 'Adagrad', 'Adadelta', 'Adam']
 
         layers_nb = rd.choice(possible_layers_nb)
-        layers = [rd.randint(possible_layers_range[0], possible_layers_range[1]) for _ in range(layers_nb-1)]
+        layers = rd.sample(possible_layers, layers_nb-1)
+        layers.sort(reverse=True)
         activations = [rd.choice(possible_activations) for _ in range(layers_nb-1)]
-        dropouts = [rd.uniform(possible_dropouts_range[0], possible_dropouts_range[1]) for _ in range(layers_nb-1)]
-        loss = rd.choice(possible_loss)
+        dropout = rd.choice(possible_dropouts)
         optimizer = rd.choice(possible_optimizer)
 
         # Define the info
@@ -78,20 +77,19 @@ def create_random_classifier(classifier_type):
             'layers_nb': layers_nb,
             'layers': layers,
             'activations': activations,
-            'dropouts': dropouts,
-            'loss': loss,
+            'dropout': dropout,
             'optimizer': optimizer
         }
 
         # Create model
         m = Sequential()
         m.add(Dense(units=layers[0], activation=activations[0], input_dim=input_dim))
-        m.add(Dropout(dropouts[0]))
+        m.add(Dropout(dropout))
         for i in range(1, layers_nb-1):
             m.add(Dense(units=layers[i], activation=activations[i]))
-            m.add(Dropout(dropouts[i]))
+            m.add(Dropout(dropout))
         m.add(Dense(units=1, activation='relu'))
-        m.compile(loss=loss, optimizer=optimizer, metrics=['mean_squared_error'])
+        m.compile(loss='mean_squared_error', optimizer=optimizer, metrics=['mean_squared_error'])
 
         print("Random model created.")
         return m, info
@@ -102,25 +100,45 @@ def create_random_classifier(classifier_type):
         input_shape = (42, 300)
 
         # Random parameters
-        possible_cells_nb = range(1, 4)
-        possible_units_range = [8, 64]
+        possible_cells_nb = range(1, 5)
+        possible_units = [2**k for k in range(0, 7)]
         possible_activations = ['relu', 'tanh', 'softmax', 'elu', 'sigmoid', 'linear']
-        possible_dropouts_range = [0., 0.5]
-        possible_loss = ['mean_squared_error']
+        possible_dropouts = np.arange(0.0, 0.6, 0.1)
         possible_optimizer = ['RMSprop', 'sgd', 'Adagrad', 'Adadelta', 'Adam']
-        possible_nn_layers_nb = range(1, 4)
-        possible_nn_layers_range = [2, 64]
-
+        """
         cells = rd.choice(possible_cells_nb)
-        units = [rd.randint(possible_units_range[0], possible_units_range[1]) for _ in range(cells)]
+        units = rd.sample(possible_units, cells)
+        units.sort(reverse=True)
         return_sequences = [True for _ in range(cells-1)] + [False]
         activations = [rd.choice(possible_activations) for _ in range(cells)]
-        dropouts = [rd.uniform(possible_dropouts_range[0], possible_dropouts_range[1]) for _ in range(cells)]
-        loss = rd.choice(possible_loss)
+        dropout = rd.choice(possible_dropouts)
         optimizer = rd.choice(possible_optimizer)
-        nn_layers_nb = rd.choice(possible_nn_layers_nb)
-        nn_layers = [rd.randint(possible_nn_layers_range[0], possible_nn_layers_range[1]) for _ in range(nn_layers_nb-1)]+[1]
-        nn_activations = [rd.choice(possible_activations) for _ in range(nn_layers_nb-1)]+['relu']
+
+        nn_input_size = units[-1]
+        possible_nn_layers_nb = [k for k in range(1, 4) if (2**(k-1) <= nn_input_size)]
+        possible_nn_layers = [2**k for k in range(1, 7) if (2**k <= nn_input_size)]
+
+        if nn_input_size == 1:
+            nn_layers_nb = 0
+            nn_layers = []
+            nn_activations = []
+        else:
+            nn_layers_nb = rd.choice(possible_nn_layers_nb)
+            nn_layers = rd.sample(possible_nn_layers, nn_layers_nb-1)+[1]
+            nn_layers.sort(reverse=True)
+            nn_activations = [rd.choice(possible_activations) for _ in range(nn_layers_nb-1)]+['relu']
+        """
+        ###
+        cells = 2
+        units = [16, 4]
+        return_sequences = [True, False]
+        activations = ['tanh', 'linear']
+        dropout = 0.2
+        optimizer = 'RMSprop'
+        nn_layers_nb = 1
+        nn_layers = [1]
+        nn_activations = ['relu']
+        ###
 
         # Define the info
         info = {
@@ -128,8 +146,7 @@ def create_random_classifier(classifier_type):
             'units': units,
             'return_sequences': return_sequences,
             'activations': activations,
-            'dropouts': dropouts,
-            'loss': loss,
+            'dropout': dropout,
             'optimizer': optimizer,
             'nn_layers_nb': nn_layers_nb,
             'nn_layers': nn_layers,
@@ -138,13 +155,15 @@ def create_random_classifier(classifier_type):
 
         # Create model
         m = Sequential()
-        m.add(GRU(input_shape=input_shape, units=units[0], activation=activations[0], dropout=dropouts[0],
+        m.add(GRU(input_shape=input_shape, units=units[0], activation=activations[0], dropout=dropout,
                   return_sequences=return_sequences[0]))
         for i in range(1, cells):
-            m.add(GRU(units=units[i], activation=activations[i], dropout=dropouts[i], return_sequences=return_sequences[i]))
+            m.add(GRU(units=units[i], activation=activations[i], dropout=dropout, return_sequences=return_sequences[i]))
         for i in range(nn_layers_nb):
+            if i != 0:
+                m.add(Dropout(dropout))
             m.add(Dense(units=nn_layers[i], activation=nn_activations[i]))
-        m.compile(loss=loss, optimizer=optimizer, metrics=['mean_squared_error'])
+        m.compile(loss='mean_squared_error', optimizer=optimizer, metrics=['mean_squared_error'])
 
         print("Model created.")
         return m, info
