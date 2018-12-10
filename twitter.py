@@ -87,8 +87,6 @@ def handle_error(Cursor):
 
 
 
-
-
 if __name__ == '__main__':
     pass
     # parameters
