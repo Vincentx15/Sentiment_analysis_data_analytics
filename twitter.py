@@ -86,24 +86,21 @@ def handle_error(Cursor):
                 print("{}/15...".format((t + 1) * 5))
 
 
-
-
-
 if __name__ == '__main__':
+
     pass
+
     # parameters
     file = "twitter_server"  # No need to specify the folder or the file extension
     query = "*"  # Query ("*" means everything)
-    lang = "fr"  # Language in the query
-    max_tweets = 1  # Max number of tweets
+    max_tweets = 1000  # Max number of tweets
     min_age = 0  # Min age of the tweets in days (0 means most recent tweets)
-
 
     # Load twitter's api
     api = load_api('data/twitter/twitter_keys.txt')
 
     i = 0
-    while i < 10:
+    while True:
         i += 1
         lang = "fr"
         fname = complete_filename(file+'_'+str(i)+'_', query, lang, max_tweets)
