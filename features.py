@@ -185,7 +185,9 @@ def we_features(raw_train_data, raw_test_data, langage, seq_l, ngram=(1, 1), min
 
 def remove_empty(data, labels=None, list_labels=None, method='bow'):
     """
-    :data the data to clean
+    :param data: the data to clean
+    :param labels: string that indicate the kind of labels provided, if wiki, treats the second columns as embeddings
+    :param list_labels: the actual iterable label
     :param method: string for the method
     :return: clean data and clean labels if some are provided
     """
@@ -210,9 +212,12 @@ def remove_empty(data, labels=None, list_labels=None, method='bow'):
 
         elif labels is not None:
             clean_data = np.asarray([x for i, x in enumerate(data) if i not in iloc])
+            clean_data = np.stack(clean_data)
             clean_labels = np.delete(np.asarray(list_labels), iloc)
+            clean_labels = np.stack(clean_labels)
         else:
             clean_data = np.asarray([x for i, x in enumerate(data) if i not in iloc])
+            clean_data = np.stack(clean_data)
             return clean_data
 
     elif method == 'bow':
@@ -249,7 +254,7 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
 
     # split data
     raw_train_data, raw_test_data, train_labels, test_labels = train_test_split(text, labels,
-                                                                                test_size=0.33, random_state=42)
+                                                                                test_size=0.25, random_state=42)
 
     # transform our labels to be able to hstack them and remove Nan or empty values
     train_labels = train_labels[:, np.newaxis]
@@ -266,25 +271,11 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
         raise ValueError('This is not an acceptable method !')
 
     # return the approriate data
-    columns = ['text']
     if labels_name:
         train_data, train_labels = remove_empty(train_data, train_labels, method)
-        print('fourth_step')
         test_data, test_labels = remove_empty(test_data, test_labels, method)
 
         return train_data, test_data, train_labels, test_labels
-
-    #     columns.append('label')
-    #     train = hstack((data, train_labels))
-    #     test = hstack((test_data, test_labels))
-    #     data = pd.DataFrame(data=train.toarray())
-    #     test_data = pd.DataFrame(data=test.toarray())
-    # else:
-    #     data = pd.DataFrame(data, columns=columns)
-    #     test_data = pd.DataFrame(test_data, columns=columns)
-    # if save_name:
-    #     data.to_csv('data/' + save_name)
-    #     test_data.to_csv('data/' + save_name)
 
     train_data = remove_empty(train_data, method=method)
     test_data = remove_empty(test_data, method=method)
