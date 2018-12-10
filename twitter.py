@@ -68,7 +68,7 @@ def write_csv(fname, tweets):
         # Process tweet by tweet
         for tweet in tweets:
             # Save it as a csv
-            f.write(str(tweet._json['id']) + ', ' + tweet._json['text'].replace("\n", "") + '\n')
+            f.write(str(tweet._json['id']) + ', ' + tweet._json['full_text'].replace("\n", "") + '\n')
     return
 
 
