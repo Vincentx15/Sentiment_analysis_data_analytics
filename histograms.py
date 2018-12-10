@@ -55,9 +55,7 @@ sns.distplot(results_en, hist=False, kde_kws={"label": 'Textblob en'})
 # results_fr = [2.5 * (res + 1) for res in results_fr]
 # results_fr = np.array(results_fr)
 # sns.distplot(results_fr, hist=False, kde_kws={"label": 'Textblob Fr'})
-#
-#
-#
+
 
 plt.show()
 '''

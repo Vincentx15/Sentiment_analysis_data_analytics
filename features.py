@@ -230,7 +230,7 @@ def remove_empty(data, labels=None, list_labels=None, method='bow'):
 
 
 def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1), min_df=0.01,
-                    max_df=0.9, method='we', labels_name='rating', text_column='review'):
+                    max_df=0.9, method='we', labels_name='rating', text_column='review', csv=True):
     """
     :param input_path: path of the csv to read
     :param method: method for the embedding
@@ -238,6 +238,7 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
     :param labels: name of the column to use for the labels, if none enter 0
     :return: train, test with labels
     """
+
     data = pd.read_csv(input_path)
     text = data[text_column].values
 
@@ -334,6 +335,53 @@ def wiki(input_path, method='we', seq_l=42, ngram=(1, 1), min_df=0.01,
     return text_en, text_fr
 
 
+def twitter(input_folder_path, files_nb, max_tweets, query, langage, method='we', seq_l=42):
+    """
+    Create the features for twitter files
+    :param input_folder_path:
+    :param langage:
+    :param method:
+    :param seq_l:
+    :param ngram:
+    :param min_df:
+    :param max_df:
+    :return:
+    """
+
+    fnames = [input_folder_path+'/twitter_server_'+str(i)+'__'+langage+'_'+str(max_tweets)+'_'+query+'.txt' for i in range(1, files_nb+1)]
+
+    text = []
+    for fname in fnames:
+        with open(fname, 'r', encoding="utf-8") as f:
+            file_tweets_list = f.readlines()
+            for i in range(len(file_tweets_list)):
+                file_tweets_list[i] = (file_tweets_list[i].replace("\n", "")).split(',', 2)
+                if len(file_tweets_list[i]) == 2:
+                    file_tweets_list[i] = file_tweets_list[i][1]
+                else:
+                    file_tweets_list[i] = ' '
+            text.extend(file_tweets_list)
+
+    text = np.asarray(text)
+    # careful if no labels are provided, return a np.array of shape (len(features),)
+    labels = np.zeros(text.shape)
+
+    # split data
+    raw_train_data, raw_test_data, _, _ = train_test_split(text, labels, test_size=0.33, random_state=42)
+
+    # Do the appropriate embedding on the text
+    if method == 'we':
+        train_data, test_data = we_features(raw_train_data, raw_test_data, langage, seq_l)
+    elif method == 'bow':
+        train_data, test_data = bow_features(raw_train_data, raw_test_data, langage)
+    else:
+        raise ValueError('This is not an acceptable method !')
+
+    train_data = remove_empty(train_data, method=method)
+    test_data = remove_empty(test_data, method=method)
+    return train_data, test_data
+
+
 def save_features(train_data, test_data, train_labels, test_labels, language, method):
     fname = "data/features/"
     if method == "bow":
@@ -386,6 +434,7 @@ def load_features(language, method):
 
 
 if __name__ == '__main__':
+    """
     method = 'we'
     language = 'en'
     csv_file = 'data/raw_csv/imdb.csv'
@@ -396,6 +445,8 @@ if __name__ == '__main__':
 
     save_features(train_data, test_data, train_labels, test_labels, language, method)
     print(time.time() - t1)
+    """
+
     """
     csv_file = 'data/wikipedia/samples.csv'
 
@@ -409,3 +460,4 @@ if __name__ == '__main__':
     A = np.load('data/features/en.npy')
     print(A.shape)
     """
+    train_data, test_data = twitter('data/twitter_queries', 304, 1000, 'all', 'fr')
