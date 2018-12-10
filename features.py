@@ -142,7 +142,6 @@ def word_embeddings(preprocessed_data, model, length_embedding, seq_l):
             else:
                 for i in range(seq_l - len(sentence_embedding)):
                     sentence_embedding.append(np.zeros(length_embedding))
-
                 sentence_embedding = np.asarray(sentence_embedding)
                 x.append(sentence_embedding)
 
@@ -460,4 +459,8 @@ if __name__ == '__main__':
     A = np.load('data/features/en.npy')
     print(A.shape)
     """
-    train_data, test_data = twitter('data/twitter_queries', 304, 1000, 'all', 'fr')
+    langage = 'en'
+    query = 'all'
+    train_data, test_data = twitter('data/twitter_queries', 304, 1000, query, langage)
+    data = np.concatenate((train_data, test_data), axis=0)
+    np.save('data/features/twitter_'+langage+'_'+query, data)
