@@ -91,46 +91,47 @@ test_stable(fr, [0.001, 0.01, 0.1, 0.9], savefig='wiki_fr.pdf')
 test_stable(en, [0.001, 0.01, 0.1, 0.9], savefig='wiki_en.pdf')
 '''
 
-
-
 '''
-language = 'en'
+language = 'fr'
 
 # Compute the true values
-*_, y_train, y_test = load_features(language, 'bow')
+*_, y_train, y_test = load_features(language, 'we')
 y_true = np.concatenate((y_train, y_test), axis=0)
 
-classifiers = ['SVM', 'NN', 'LSTM']
-methods = ['bow', 'bow', 'we']
+classifiers = ['LSTM']
+methods = ['we']
 y_pred = []
 
-# for i in range(3):
-#     print('')
-#     print("{}/3...".format(i+1))
-#     method = methods[i]
-#     classifier = classifiers[i]
-#     x_train, x_test, _, _ = load_features(language, method)
-#     load_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
-#     model = load_classifier(classifier, load_file)
-#     y_pred_train = predict_classifier(model, x_train)
-#     y_pred_test = predict_classifier(model, x_test)
-#     y_pred.append(np.concatenate((y_pred_train, y_pred_test), axis=0))
+for i in range(1):
+    print('')
+    print("{}/3...".format(i+1))
+    method = methods[i]
+    classifier = classifiers[i]
+    x_train, x_test, _, _ = load_features(language, method)
+    # load_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
+    load_file = 'data/model/final_' + classifier + '_' + method + '_' + language
+    model = load_classifier(classifier, load_file)
+    y_pred_train = predict_classifier(model, x_train)
+    y_pred_test = predict_classifier(model, x_test)
+    y_pred.append(np.concatenate((y_pred_train, y_pred_test), axis=0))
 
-print("Textblob...")
+# print("Textblob...")
 
-data_en = pd.read_csv('data/raw_csv/imdb.csv')
-reviews_en = data_en['review']
-ratings_en = data_en['rating']
-results_en = [TextBlob(review).sentiment[0] for review in reviews_en]
-results_en = [2.5 * (res + 1) for res in results_en]
-results_en = np.array(results_en)
+# data_en = pd.read_csv('data/raw_csv/imdb.csv')
+# reviews_en = data_en['review']
+# ratings_en = data_en['rating']
+# results_en = [TextBlob(review).sentiment[0] for review in reviews_en]
+# results_en = [2.5 * (res + 1) for res in results_en]
+# results_en = np.array(results_en)
 
-sns.distplot(y_true, hist=False, kde_kws={"color": "b", "lw": 2, "label": "True"})
-for i in range(1, 3):
-    y_pred = np.load('data/saved_distributions/distributions_' + language + '_' + str(i) + '.npy')
-    sns.distplot(y_pred, hist=False, kde_kws={"label": classifiers[i]})
+# sns.distplot(y_true, hist=True, kde_kws={"color": "b", "lw": 2, "label": "True"})
+sns.distplot(y_true, hist=True,kde=False, norm_hist=True)
+sns.distplot(y_pred[0], hist=False, kde_kws={"color": "r", "lw": 2, "label": "Pred"})
+# for i in range(1, 3):
+#     y_pred = np.load('data/saved_distributions/distributions_' + language + '_' + str(i) + '.npy')
+#     sns.distplot(y_pred, hist=False, kde_kws={"label": classifiers[i]})
 
-sns.distplot(results_en, hist=False, kde_kws={"label": 'Textblob en'})
+# sns.distplot(results_en, hist=False, kde_kws={"label": 'Textblob en'})
 
 # data_fr = pd.read_csv('data/raw_csv/allocine.csv')
 # reviews_fr = data_fr['review']
@@ -139,10 +140,6 @@ sns.distplot(results_en, hist=False, kde_kws={"label": 'Textblob en'})
 # results_fr = [2.5 * (res + 1) for res in results_fr]
 # results_fr = np.array(results_fr)
 # sns.distplot(results_fr, hist=False, kde_kws={"label": 'Textblob Fr'})
-<<<<<<< HEAD
-=======
-
->>>>>>> ca8d7721331165279ca516453cd8e800bd781352
 
 plt.show()
 '''
@@ -160,8 +157,8 @@ sns.distplot(distrib_fr, hist=False, kde_kws={"color": "r", "lw": 2, "label": "E
 plt.show()
 '''
 
-
-# Histogram of the length of the reviews
+'''
+# Histogram of the length of the reviews for imdb and allowiné
 from features import *
 
 method = 'we'
@@ -191,4 +188,61 @@ for i in range(0,1):
     plt.show()
 
     print("Mean: {}; mode: {}".format(round(np.mean(preprocessed_length), 2), round(mode(preprocessed_length), 2)))
+'''
+'''
+# Histogram of the length of the tweets
+from features import *
 
+files = ['data/features/twitter_en_all.npy', 'data/features/twitter_fr_all.npy']
+
+for i in range(1, 2):
+    file = files[i]
+
+    data = np.load(file)
+    lengths = []
+    for i in range(data.shape[0]):
+        l = 0
+        for j in range(data.shape[1]):
+            if sum(data[i,j,:]) != 0:
+                l += 1
+        lengths.append(l)
+
+    sns.distplot(lengths,kde=False)
+    plt.show()
+
+    print("Mean: {}; mode: {}".format(round(np.mean(lengths), 2), round(mode(lengths), 2)))
+'''
+
+
+#   Plot the wiki distributions
+# en1 = np.load('data/twitter/results/twitter_yellowvest_LSTM_we_en.npy')
+# fr = np.load('data/twitter/results/twitter_giletsjaunes_LSTM_we_fr.npy')
+
+# en = np.load('data/twitter/results/twitter_yellowvest_extended_LSTM_we_en.npy')
+# fr = np.load('data/twitter/results/twitter_giletsjaunes_extended_LSTM_we_fr.npy')
+
+# en2 = np.load('data/twitter/results/twitter_all_LSTM_we_en.npy')
+# fr = np.load('data/twitter/results/twitter_all_LSTM_we_fr.npy')
+
+# 3.73en
+# 3.49fr
+twitter_en_all = np.load('data/twitter/results/old_LSTM_we_en.npy')-3.73
+twitter_en_yellowvest = np.load('data/twitter/results/old_yellowvest_LSTM_we_en.npy')-3.73
+twitter_fr_all = np.load('data/twitter/results/old_LSTM_we_fr.npy')-3.49
+twitter_fr_giletsjaunes = np.load('data/twitter/results/old_giletsjaunes_LSTM_we_fr.npy')-3.49
+
+print("Mean: {}".format(np.mean(twitter_en_all)))
+print("Mean: {}".format(np.mean(twitter_en_yellowvest)))
+print("Mean: {}".format(np.mean(twitter_fr_all)))
+print("Mean: {}".format(np.mean(twitter_fr_giletsjaunes)))
+# print("Mean: {}".format(np.mean(wiki_fr)))
+
+# sns.distplot(twitter_en_all, kde_kws={'label':'English Twitter'})
+# sns.distplot(twitter_en_yellowvest, kde_kws={'label':'Query: "yellow vest"'})
+# sns.distplot(twitter_fr_all, kde_kws={'label':'French Twitter'})
+# sns.distplot(twitter_fr_giletsjaunes, kde_kws={'label':'Query: "gilets jaunes"'})
+# plt.show()
+# fr = twitter_fr_all
+en = twitter_en_yellowvest
+# test_stable(fr, [0.001, 0.01, 0.1, 0.9], savefig='wiki_fr.pdf')
+test_stable(en, [0.01, 0.1, 0.9], savefig='wiki_en.pdf')

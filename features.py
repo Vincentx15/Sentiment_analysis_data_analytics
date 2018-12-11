@@ -325,7 +325,7 @@ def wiki(input_path, method='we', seq_l=42, ngram=(1, 1), min_df=0.01,
     return text_en, text_fr
 
 
-def twitter(input_folder_path, files_nb, max_tweets, query, langage, method='we', seq_l=42):
+def twitter(input_folder_path, files_nb, max_tweets, query, langage, extended=False, method='we', seq_l=42):
     """
     Create the features for twitter files
     :param input_folder_path:
@@ -338,7 +338,11 @@ def twitter(input_folder_path, files_nb, max_tweets, query, langage, method='we'
     :return:
     """
 
-    fnames = [input_folder_path+'/twitter_server_'+str(i)+'__'+langage+'_'+str(max_tweets)+'_'+query+'.txt' for i in range(1, files_nb+1)]
+    if extended:
+        str_extended = '_extended'
+    else:
+        str_extended = ''
+    fnames = [input_folder_path+'/twitter_server_'+str(i)+'__'+langage+'_'+str(max_tweets)+'_'+query+str_extended+'.txt' for i in range(1, files_nb+1)]
 
     text = []
     for fname in fnames:
@@ -450,8 +454,20 @@ if __name__ == '__main__':
     A = np.load('data/features/en.npy')
     print(A.shape)
     """
-    langage = 'en'
-    query = 'all'
-    train_data, test_data = twitter('data/twitter_queries', 304, 1000, query, langage)
+    langage1 = 'en'
+    query1 = 'yellowvest'
+    langage2 = 'fr'
+    query2 = 'giletsjaunes'
+    extended = True
+    if extended:
+        str_extended = '_extended'
+    else:
+        str_extended = ''
+
+    # train_data, test_data = twitter('data/twitter2', 1, 2000, query1, langage1, extended)
+    # data = np.concatenate((train_data, test_data), axis=0)
+    # np.save('data/features/twitter_'+langage1+'_'+query1+str_extended, data)
+
+    train_data, test_data = twitter('data/twitter2', 1, 2000, query2, langage2, extended)
     data = np.concatenate((train_data, test_data), axis=0)
-    np.save('data/features/twitter_'+langage+'_'+query, data)
+    np.save('data/features/twitter_' + langage2 + '_' + query2+str_extended, data)
