@@ -11,6 +11,9 @@ from textblob import TextBlob
 import numpy as np
 import seaborn as sns
 
+from features import preprocess_tokenize
+import os
+
 '''
 #  Plot data distribution
 data_en = pd.read_csv('data/raw_csv/imdb.csv')
@@ -77,6 +80,7 @@ def test_stable(distribution, rates=0.7, savefig=None):
         plt.savefig(savefig)
     plt.show()
 
+
 '''
 #   Plot the wiki distributions
 en = np.load('data/wikipedia/results/en.npy')
@@ -89,9 +93,11 @@ test_stable(en, [0.001, 0.01, 0.1, 0.9])
 
 test_stable(fr, [0.001, 0.01, 0.1, 0.9], savefig='wiki_fr.pdf')
 test_stable(en, [0.001, 0.01, 0.1, 0.9], savefig='wiki_en.pdf')
+
+print('en', np.mean(en), 'fr', np.mean(fr))
+# en 3.7348151 fr 3.4951324
+
 '''
-
-
 
 '''
 language = 'en'
@@ -139,28 +145,46 @@ sns.distplot(results_en, hist=False, kde_kws={"label": 'Textblob en'})
 # results_fr = [2.5 * (res + 1) for res in results_fr]
 # results_fr = np.array(results_fr)
 # sns.distplot(results_fr, hist=False, kde_kws={"label": 'Textblob Fr'})
-<<<<<<< HEAD
-=======
 
->>>>>>> ca8d7721331165279ca516453cd8e800bd781352
 
 plt.show()
 '''
 
+
+def diff_distributions(a, b, percentile=5):
+    # Align the supports
+    lower_a, upper_a = np.percentile(a, [percentile, 100 - percentile])
+    lower_b, upper_b = np.percentile(b, [percentile, 100 - percentile])
+    inlier_a = a[np.where((a >= lower_a) & (a <= upper_a))]
+    inlier_b = b[np.where((b >= lower_b) & (b <= upper_b))]
+    min_a, max_a = np.min(inlier_a), np.max(inlier_a)
+    min_b, max_b = np.min(inlier_b), np.max(inlier_b)
+    range = min(min_a, min_b), max(max_a, max_b)
+
+    # Compute the histograms with this given range
+    dist_a, bins = np.histogram(inlier_a, bins=1000, range=range)
+    dist_b, _ = np.histogram(inlier_b, bins=1000, range=range)
+    dist_a = dist_a / np.sum(dist_a)
+    dist_b = dist_b / np.sum(dist_b)
+
+    print(bins)
+    plt.plot(bins[:-1], dist_a - dist_b, label='b')
+    plt.show()
+    # integral_a = np.sum(np.multiply((dist_a), bins[:-1] / len(bins)))
+    integral_terms = np.multiply((dist_a - dist_b), bins[:-1])
+    print(integral_terms)
+    plt.plot(bins[:-1], integral_terms, label='b')
+    plt.show()
+    integral_diff = np.sum(integral_terms) / len(bins)
+    return integral_diff
+
+
+# a = np.random.randn(10000)
+# b = np.random.randn(10000)
+# diff = diff_distributions(a, b)
+# print(diff)
+
 '''
-distrib_en = np.load('data/wikipedia/results/en.npy')
-distrib_fr = np.load('data/wikipedia/results/fr.npy')
-
-print('en', np.mean(distrib_en), 'fr', np.mean(distrib_fr))
-# en 3.7348151 fr 3.4951324
-
-
-sns.distplot(distrib_en, hist=False, kde_kws={"color": "b", "lw": 2, "label": "Fr"})
-sns.distplot(distrib_fr, hist=False, kde_kws={"color": "r", "lw": 2, "label": "En"})
-plt.show()
-'''
-
-
 # Histogram of the length of the reviews
 from features import *
 
@@ -191,4 +215,29 @@ for i in range(0,1):
     plt.show()
 
     print("Mean: {}; mode: {}".format(round(np.mean(preprocessed_length), 2), round(mode(preprocessed_length), 2)))
-
+'''
+# whole = []
+# for i, file in enumerate(os.listdir('data/twitter/toto')):
+#     # str_list = list(filter(None, str_list))
+#     text = []
+#     # if i > 2:
+#     #     break
+#     with open('data/twitter/toto/' + file, 'r', encoding="utf-8") as f:
+#         file_tweets_list = f.readlines()
+#         for i in range(len(file_tweets_list)):
+#             file_tweets_list[i] = (file_tweets_list[i].replace("\n", "")).split(',', 2)
+#             if len(file_tweets_list[i]) == 2:
+#                 file_tweets_list[i] = file_tweets_list[i][1]
+#             else:
+#                 file_tweets_list[i] = ' '
+#         # print(file_tweets_list)
+#         text.extend(file_tweets_list)
+#         # print(text)
+#     text = np.asarray(text)
+#     batch = preprocess_tokenize(text, langage='en')
+#     whole.extend(batch)
+#
+# whole = list(filter(None, whole))
+# lengths = [len(sentence) for sentence in whole]
+# sns.distplot(lengths)
+# plt.show()
