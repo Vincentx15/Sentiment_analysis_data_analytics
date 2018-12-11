@@ -11,8 +11,8 @@ paths.append('data/aclImdb/train/pos')
 def parse_imdb_reviews(path_dir):
     """
     parse one folder of imdb large review db
-    :param path:
-    :return:
+    :param path: string where to look
+    :return: df with the results
     """
     reviews = []
     max_i = 0

@@ -10,7 +10,6 @@ from features import preprocess_tokenize
 import os
 
 
-
 def plot_ratings_movies_dataset():
     """
     Plot the ratings of imdb and allocine
@@ -140,6 +139,14 @@ def test_stable(distribution, rates=0.7, savefig=None, print_mean=False):
 
 
 def diff_distributions(a, b, percentile=5):
+    """
+    Compute a scalar relevant for comparing distributions by computing integral[ (a(x)-b(x))**1/3 x dx]
+    Aligns the supports by outliers filtering and zero padding
+    :param a: a distribution as a np array of observed values
+    :param b: a distribution as a np array of observed values
+    :param percentile: filtering parameter for the outliers
+    :return: the computed integrals
+    """
     # Align the supports
     lower_a, upper_a = np.percentile(a, [percentile, 100 - percentile])
     lower_b, upper_b = np.percentile(b, [percentile, 100 - percentile])
@@ -149,22 +156,31 @@ def diff_distributions(a, b, percentile=5):
     min_b, max_b = np.min(inlier_b), np.max(inlier_b)
     range = min(min_a, min_b), max(max_a, max_b)
 
-    # Compute the histograms with this given range
+    # Compute the normalised histograms with this given range
     dist_a, bins = np.histogram(inlier_a, bins=1000, range=range)
     dist_b, _ = np.histogram(inlier_b, bins=1000, range=range)
     dist_a = dist_a / np.sum(dist_a)
     dist_b = dist_b / np.sum(dist_b)
+    # plt.plot(bins[:-1], dist_a - dist_b, label='b')
+    # plt.show()
 
-    print(bins)
-    plt.plot(bins[:-1], dist_a - dist_b, label='b')
-    plt.show()
-    # integral_a = np.sum(np.multiply((dist_a), bins[:-1] / len(bins)))
-    integral_terms = np.multiply((dist_a - dist_b), bins[:-1])
-    print(integral_terms)
-    plt.plot(bins[:-1], integral_terms, label='b')
-    plt.show()
+    # Compute the integral
+    def cubic_root(x):
+        if 0 <= x: return x ** (1. / 3.)
+        return -(-x) ** (1. / 3.)
+    integral_terms = np.multiply(np.array([cubic_root(x) for x in (dist_a - dist_b)]), bins[:-1])
+    # print(integral_terms)
+    # plt.plot(bins[:-1], integral_terms, label='integrated function')
+    # plt.show()
     integral_diff = np.sum(integral_terms) / len(bins)
     return integral_diff
+
+
+# a = np.random.randn((10000))+5
+# b = np.random.randn((10000))
+# c = diff_distributions(a, b)
+# print(c)
+
 
 def plot_twitter_with_query(fname1, fname2, mean_calibration):
     """
@@ -184,8 +200,39 @@ def plot_twitter_with_query(fname1, fname2, mean_calibration):
     sns.distplot(plot_2)
 
 
+def read_twitter_data(path):
+    """
+    Length distributions of sentences in twitter after tokenization but before word embeddings
+    :return:
+    """
+    whole = []
+    for i, file in enumerate(os.listdir()):
+        tweets = []
+        # if i > 2:
+        #     break
+        with open('data/twitter/toto/' + file, 'r', encoding="utf-8") as f:
+            file_tweets_list = f.readlines()
+            for i in range(len(file_tweets_list)):
+                file_tweets_list[i] = (file_tweets_list[i].replace("\n", "")).split(',', 2)
+                if len(file_tweets_list[i]) == 2:
+                    file_tweets_list[i] = file_tweets_list[i][1]
+                else:
+                    file_tweets_list[i] = ' '
+            tweets.extend(file_tweets_list)
+        tweets = np.asarray(tweets)
+        batch = preprocess_tokenize(tweets, langage='en')
+        whole.extend(batch)
+
+    whole = list(filter(None, whole))
+    lengths = [len(sentence) for sentence in whole]
+    sns.distplot(lengths)
+    plt.show()
+
+
+
 
 if __name__ == '__main__':
+    pass
     # plot_lengths_movies_dataset()
     # plot_ratings_movies_dataset()
 
@@ -195,40 +242,16 @@ if __name__ == '__main__':
     # ''' Means: en: 3.7348151; fr: 3.4951324'''
     # plot_wiki_distribution('data/wikipedia/en_results_LSTM_we_en.npy', 'data/wikipedia/fr_results_LSTM_we_fr.npy')
 
-
     # print("Mean: {}; mode: {}".format(round(np.mean(preprocessed_length), 2), round(mode(preprocessed_length), 2)))
 
     # plot_pred_and_labels('en', True, ['SVM', 'NN', 'LSTM'])
     # plot_pred_and_labels('fr', True, ['SVM', 'NN', 'LSTM'])
 
+    # read_twitter_data('data/twitter/toto')
+
     # plot_twitter_with_query('data/twitter/results/old_LSTM_we_en.npy',
     #                         'data/twitter/results/old_yellowvest_LSTM_we_en.npy', 3.73)
-    plot_twitter_with_query('data/twitter/results/old_LSTM_we_fr.npy',
-                            'data/twitter/results/old_giletsjaunes_LSTM_we_fr.npy', 3.49)
+    # plot_twitter_with_query('data/twitter/results/old_LSTM_we_fr.npy',
+    #                         'data/twitter/results/old_giletsjaunes_LSTM_we_fr.npy', 3.49)
 
-# Length distributions of twitter
-# whole = []
-# for i, file in enumerate(os.listdir('data/twitter/toto')):
-#     # str_list = list(filter(None, str_list))
-#     text = []
-#     # if i > 2:
-#     #     break
-#     with open('data/twitter/toto/' + file, 'r', encoding="utf-8") as f:
-#         file_tweets_list = f.readlines()
-#         for i in range(len(file_tweets_list)):
-#             file_tweets_list[i] = (file_tweets_list[i].replace("\n", "")).split(',', 2)
-#             if len(file_tweets_list[i]) == 2:
-#                 file_tweets_list[i] = file_tweets_list[i][1]
-#             else:
-#                 file_tweets_list[i] = ' '
-#         # print(file_tweets_list)
-#         text.extend(file_tweets_list)
-#         # print(text)
-#     text = np.asarray(text)
-#     batch = preprocess_tokenize(text, langage='en')
-#     whole.extend(batch)
-#
-# whole = list(filter(None, whole))
-# lengths = [len(sentence) for sentence in whole]
-# sns.distplot(lengths)
-# plt.show()
+

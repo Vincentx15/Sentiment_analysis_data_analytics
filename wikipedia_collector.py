@@ -1,6 +1,5 @@
 import wikipediaapi
 import wikipedia
-import requests
 import pandas as pd
 import random
 import time
@@ -14,6 +13,12 @@ wiki_fr = wikipediaapi.Wikipedia('fr')
 
 
 def get_other_language(page, language):
+    """
+    Get the langlink if it exists
+    :param page: Wikipedia page
+    :param language: language code such as 'fr', 'en'...
+    :return: the link to the requested page
+    """
     try:
         langlinks = page.langlinks
         v = langlinks[language]
@@ -27,7 +32,7 @@ def sample_bilingual_batch(iteration):
     """
     Get random wiki pages, to be called by the function below
     :param iteration: to track the progress
-    :return:
+    :return: nothing, writes csv
     """
     wikipedia.set_lang('fr')
     random_pages = (wikipedia.random(500))
@@ -55,6 +60,11 @@ def sample_bilingual_batch(iteration):
 
 
 def sample_bilingual(number=10000):
+    """
+    Repeatedly call the former function to randomly sample wiki pages and check for an english page.
+    :param number: The number after which we should stop
+    :return: nothing, the called function writes csv
+    """
     sampled = 0
     while sampled < number:
         sample_bilingual_batch(sampled)
@@ -67,10 +77,5 @@ sample_bilingual(10000)
 # df = pd.read_csv('data/wikipedia/samples.csv')
 # print(df)
 
-
-def print_links(page):
-    links = page.links
-    for title in sorted(links.keys()):
-        print("%s: %s" % (title, links[title]))
 
 

@@ -14,6 +14,10 @@ stop_words_en = get_stop_words('en')
 
 
 class FrenchLemmaTokenizer(object):
+    """
+    This is basically a function with a shared memory between calls for the wnl frenchstemmer
+    """
+
     def __init__(self):
         self.wnl = FrenchStemmer()
 
@@ -22,6 +26,10 @@ class FrenchLemmaTokenizer(object):
 
 
 class EnglishLemmaTokenizer(object):
+    """
+    Same thing here
+    """
+
     def __init__(self):
         self.wnl = WordNetLemmatizer()
 
@@ -32,13 +40,13 @@ class EnglishLemmaTokenizer(object):
 def bow_features(raw_train_data, raw_test_data, language, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
     Perform bow embedding with the given parameters, the training is only conducted on the train
-    :param raw_train_data:
-    :param raw_test_data:
-    :param language:
-    :param ngram:
-    :param min_df:
-    :param max_df:
-    :return:
+    :param raw_train_data: list (iterable) of text items
+    :param raw_test_data: list (iterable) of text items
+    :param language: 'en' or 'fr'
+    :param ngram: range of the n-gram to use (1,1) or (1,2) mostly
+    :param min_df: cutoff for unfrequent words, between 0 and max_df
+    :param max_df: cutoff for too frequent words or context specific stop words, between min_df and 1
+    :return: processed train/test data
     """
 
     if language == 'en':
@@ -63,13 +71,13 @@ def bow_features(raw_train_data, raw_test_data, language, ngram=(1, 1), min_df=0
 
 def preprocess_tokenize(data, language, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
-    Read a list of strings. return a list of list of words without stopwords
-    :param data:
-    :param language:
-    :param ngram:
-    :param min_df:
-    :param max_df:
-    :return:
+    Read a list of strings. return a list of list of words without stopwords, tokenized
+    :param data: list (iterable) of text items
+    :param language: 'en' or 'fr'
+    :param ngram: range of the n-gram to use (1,1) or (1,2) mostly
+    :param min_df: cutoff for unfrequent words, between 0 and max_df
+    :param max_df: cutoff for too frequent words or context specific stop words, between min_df and 1
+    :return: processed data
     """
 
     if language == 'en':
@@ -133,14 +141,13 @@ def word_embeddings(preprocessed_data, model, length_embedding, seq_length):
 def we_features(raw_train_data, raw_test_data, language, seq_length, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
     Wrapper for word embedding features to take two sets (training and test)
-    :param raw_train_data:
-    :param raw_test_data:
-    :param language:
-    :param seq_length:
-    :param ngram:
-    :param min_df:
-    :param max_df:
-    :return:
+    :param raw_train_data: list (iterable) of text items
+    :param raw_test_data: list (iterable) of text items
+    :param language: 'en' or 'fr'
+    :param ngram: range of the n-gram to use (1,1) or (1,2) mostly
+    :param min_df: cutoff for unfrequent words, between 0 and max_df
+    :param max_df: cutoff for too frequent words or context specific stop words, between min_df and 1
+    :return: processed train/test data
     """
 
     # Load the pretrained model
@@ -254,7 +261,8 @@ def create_features(input_path, language, seq_length, ngram=(1, 1), min_df=0.01,
 
     # Do the appropriate embedding on the text
     if method == 'we':
-        train_data, test_data = we_features(raw_train_data, raw_test_data, language, seq_length, ngram=ngram, min_df=min_df,
+        train_data, test_data = we_features(raw_train_data, raw_test_data, language, seq_length, ngram=ngram,
+                                            min_df=min_df,
                                             max_df=max_df)
     elif method == 'bow':
         train_data, test_data = bow_features(raw_train_data, raw_test_data, language,
@@ -421,6 +429,7 @@ def load_features(language, method):
 
 
 if __name__ == '__main__':
+    pass
     """
     method = 'we'
     language = 'en'
@@ -446,20 +455,20 @@ if __name__ == '__main__':
     A = np.load('data/features/en.npy')
     print(A.shape)
     """
-    langage1 = 'en'
-    query1 = 'yellowvest'
-    langage2 = 'fr'
-    query2 = 'giletsjaunes'
-    extended = True
-    if extended:
-        str_extended = '_extended'
-    else:
-        str_extended = ''
-
+    # langage1 = 'en'
+    # query1 = 'yellowvest'
+    # langage2 = 'fr'
+    # query2 = 'giletsjaunes'
+    # extended = True
+    # if extended:
+    #     str_extended = '_extended'
+    # else:
+    #     str_extended = ''
+    #
     # train_data, test_data = twitter('data/twitter2', 1, 2000, query1, langage1, extended)
     # data = np.concatenate((train_data, test_data), axis=0)
     # np.save('data/features/twitter_'+langage1+'_'+query1+str_extended, data)
-
-    train_data, test_data = twitter('data/twitter2', 1, 2000, query2, langage2, extended)
-    data = np.concatenate((train_data, test_data), axis=0)
-    np.save('data/features/twitter_' + langage2 + '_' + query2 + str_extended, data)
+    #
+    # train_data, test_data = twitter('data/twitter2', 1, 2000, query2, langage2, extended)
+    # data = np.concatenate((train_data, test_data), axis=0)
+    # np.save('data/features/twitter_' + langage2 + '_' + query2 + str_extended, data)
