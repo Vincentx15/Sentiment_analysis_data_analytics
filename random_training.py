@@ -8,12 +8,12 @@ method = 'we'
 language = 'fr'
 epochs = 5
 batch_size = 32
-duration = 3600*6
+duration = 3600 * 6
 
 # Initialization
 t0 = t.time()
 best_model, best_mse = None, 0
-save_file = 'data/model/test_3_random_trained_' + classifier + '_' + method + '_' + language
+save_fname = 'data/model/test_3_random_trained_' + classifier + '_' + method + '_' + language
 
 # Load the data
 x_train, x_test, y_train, y_test = load_features(language, method)
@@ -43,7 +43,7 @@ while t.time() - t0 < duration:
         best_mse = new_mse
         best_epochs = new_epochs
 
-        save_classifier(classifier, best_model, save_file)
+        save_classifier(classifier, best_model, save_fname)
         print("Best model information: {}".format(best_info))
         print("MSE: {}".format(best_mse))
         print("Epochs: {}".format(best_epochs))
@@ -52,4 +52,3 @@ while t.time() - t0 < duration:
         print("Training done, MSE: {} (best MSE: {})".format(new_mse, best_mse))
 
     cmpt += 1
-    break

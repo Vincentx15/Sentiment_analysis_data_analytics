@@ -1,28 +1,16 @@
-# utils
 import numpy as np
-import time
 import pandas as pd
 from sklearn.model_selection import train_test_split
-
-# we
 from gensim.models import KeyedVectors as Kv
-
-# bow
 from sklearn.feature_extraction.text import CountVectorizer
 from stop_words import get_stop_words
 from nltk.stem.snowball import FrenchStemmer
 from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
-
 import scipy.sparse as sp
 
 stop_words_fr = get_stop_words('fr')
 stop_words_en = get_stop_words('en')
-
-
-'''
-bow embedding
-'''
 
 
 class FrenchLemmaTokenizer(object):
@@ -41,84 +29,75 @@ class EnglishLemmaTokenizer(object):
         return [self.wnl.lemmatize(t) for t in word_tokenize(s) if t.isalpha()]
 
 
-def bow_features(raw_train_data, raw_test_data, langage, ngram=(1, 1), min_df=0.01, max_df=0.9):
+def bow_features(raw_train_data, raw_test_data, language, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
     Perform bow embedding with the given parameters, the training is only conducted on the train
     :param raw_train_data:
     :param raw_test_data:
-    :param stopwords:
+    :param language:
     :param ngram:
     :param min_df:
     :param max_df:
     :return:
     """
-    if langage == 'en':
+
+    if language == 'en':
         tokenizer = EnglishLemmaTokenizer()
-        # No need to modify stopwords since the lemmatization will just reduce some to some others
         stopwords = stop_words_en
-    elif langage == 'fr':
+
+    elif language == 'fr':
         tokenizer = FrenchLemmaTokenizer()
         stopwords = [tokenizer(stopword)[0] for stopword in stop_words_fr]
+
     else:
         raise ValueError('Wrong language ! ')
-    vectorizer = CountVectorizer(input='content ',
-                                 analyzer='word',
-                                 ngram_range=ngram,
-                                 stop_words=stopwords,
-                                 min_df=min_df,
-                                 max_df=max_df,
-                                 tokenizer=tokenizer)
 
-    # # just to debug
-    # analyzer = vectorizer.build_analyzer()
-    # processed = [analyzer(doc) for doc in raw_train_data]
-    # return processed
+    vectorizer = CountVectorizer(input='content ', analyzer='word', ngram_range=ngram, stop_words=stopwords,
+                                 min_df=min_df, max_df=max_df, tokenizer=tokenizer)
 
     train_data = vectorizer.fit_transform(raw_train_data)
     test_data = vectorizer.transform(raw_test_data)
+
     return train_data, test_data
 
 
-'''
-we method
-'''
-
-
-def preprocess_tokenize(data, langage, ngram=(1, 1), min_df=0.01, max_df=0.9):
+def preprocess_tokenize(data, language, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
-    read a list of strings. return a list of list of words without stopwords
+    Read a list of strings. return a list of list of words without stopwords
     :param data:
-    :param m_df:
+    :param language:
     :param ngram:
-    :param stopwords:
+    :param min_df:
+    :param max_df:
     :return:
     """
-    if langage == 'en':
+
+    if language == 'en':
         stopwords = stop_words_en
-    elif langage == 'fr':
+    elif language == 'fr':
         stopwords = stop_words_fr
     else:
         raise ValueError('Wrong language ! ')
-    vectorizer = CountVectorizer(input='content ',
-                                 analyzer='word',
-                                 ngram_range=ngram,
-                                 stop_words=stopwords,
-                                 min_df=min_df,
-                                 max_df=max_df)
+
+    vectorizer = CountVectorizer(input='content ', analyzer='word', ngram_range=ngram, stop_words=stopwords,
+                                 min_df=min_df, max_df=max_df)
+
     analyzer = vectorizer.build_analyzer()
     processed = [analyzer(doc) if (doc not in [np.NaN, np.nan]) else [] for doc in data]
+
     return processed
 
 
-def word_embeddings(preprocessed_data, model, length_embedding, seq_l):
+def word_embeddings(preprocessed_data, model, length_embedding, seq_length):
     """
     Returns a feature list with for each sample the embeddings of the words in the sentence
     :param preprocessed_data: list of list of string, sentences to process
     :param model: a word embedding model
     :param length_embedding: the length of each of the embedding vectors
-    :param seq_l: int, length of the sequence we want to return
+    :param seq_length: int, length of the sequence we want to return
     :return: list of either [] or word_embedding*seq_l
     """
+
     x = []
     for review in preprocessed_data:
         # Create an embedding for each sentence
@@ -134,15 +113,14 @@ def word_embeddings(preprocessed_data, model, length_embedding, seq_l):
         if sentence_embedding:
 
             # Remove elements if necessary
-            if len(sentence_embedding) >= seq_l:
-                sentence_embedding = np.asarray(sentence_embedding[0:seq_l])
+            if len(sentence_embedding) >= seq_length:
+                sentence_embedding = np.asarray(sentence_embedding[0:seq_length])
                 x.append(sentence_embedding)
 
             # Perform zero-padding if necessary
             else:
-                for i in range(seq_l - len(sentence_embedding)):
+                for i in range(seq_length - len(sentence_embedding)):
                     sentence_embedding.append(np.zeros(length_embedding))
-
                 sentence_embedding = np.asarray(sentence_embedding)
                 x.append(sentence_embedding)
 
@@ -152,46 +130,58 @@ def word_embeddings(preprocessed_data, model, length_embedding, seq_l):
     return x
 
 
-def we_features(raw_train_data, raw_test_data, langage, seq_l, ngram=(1, 1), min_df=0.01, max_df=0.9):
+def we_features(raw_train_data, raw_test_data, language, seq_length, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
-    wrapper for word embedding features to take two sets (training and test)
+    Wrapper for word embedding features to take two sets (training and test)
+    :param raw_train_data:
+    :param raw_test_data:
+    :param language:
+    :param seq_length:
+    :param ngram:
+    :param min_df:
+    :param max_df:
+    :return:
     """
-    print('first step')
+
     # Load the pretrained model
-    if langage == 'en':
+    if language == 'en':
         fname = 'data/word_embeddings/wiki.en.vec.bin'
         binary = True
         model = Kv.load_word2vec_format(fname, binary=binary)
         length_embedding = len(model['hello'])
-    elif langage == 'fr':
+
+    elif language == 'fr':
         fname = 'data/word_embeddings/wiki.fr.vec.bin'
         binary = True
         model = Kv.load_word2vec_format(fname, binary=binary)
         length_embedding = len(model['bonjour'])
+
     else:
         raise ValueError('Wrong language ! ')
 
-    print('second step')
-    # using this we, compute features
-    processed_train_data = preprocess_tokenize(raw_train_data, langage=langage, ngram=ngram, min_df=min_df,
+    processed_train_data = preprocess_tokenize(raw_train_data, language=language, ngram=ngram, min_df=min_df,
                                                max_df=max_df)
-    train_data = word_embeddings(processed_train_data, model=model, length_embedding=length_embedding, seq_l=seq_l)
+    train_data = word_embeddings(processed_train_data, model=model, length_embedding=length_embedding,
+                                 seq_length=seq_length)
 
-    print('third step')
-    processed_test_data = preprocess_tokenize(raw_test_data, langage=langage, ngram=ngram, min_df=min_df, max_df=max_df)
-    test_data = word_embeddings(processed_test_data, model=model, length_embedding=length_embedding, seq_l=seq_l)
+    processed_test_data = preprocess_tokenize(raw_test_data, language=language, ngram=ngram, min_df=min_df,
+                                              max_df=max_df)
+    test_data = word_embeddings(processed_test_data, model=model, length_embedding=length_embedding,
+                                seq_length=seq_length)
 
     return train_data, test_data
 
 
 def remove_empty(data, labels=None, list_labels=None, method='bow'):
     """
+    Remove empty lists in the data
     :param data: the data to clean
     :param labels: string that indicate the kind of labels provided, if wiki, treats the second columns as embeddings
     :param list_labels: the actual iterable label
     :param method: string for the method
     :return: clean data and clean labels if some are provided
     """
+
     if method == 'we':
         iloc = []
         for id, item in enumerate(data):
@@ -234,9 +224,10 @@ def remove_empty(data, labels=None, list_labels=None, method='bow'):
     return clean_data, clean_labels
 
 
-def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1), min_df=0.01,
+def create_features(input_path, language, seq_length, ngram=(1, 1), min_df=0.01,
                     max_df=0.9, method='we', labels_name='rating', text_column='review', csv=True):
     """
+    Creates features
     :param input_path: path of the csv to read
     :param method: method for the embedding
     :param text_column: name of the column of the csv to use for the text items
@@ -263,10 +254,10 @@ def create_features(input_path, langage, save_name=False, seq_l=42, ngram=(1, 1)
 
     # Do the appropriate embedding on the text
     if method == 'we':
-        train_data, test_data = we_features(raw_train_data, raw_test_data, langage, seq_l, ngram=ngram, min_df=min_df,
+        train_data, test_data = we_features(raw_train_data, raw_test_data, language, seq_length, ngram=ngram, min_df=min_df,
                                             max_df=max_df)
     elif method == 'bow':
-        train_data, test_data = bow_features(raw_train_data, raw_test_data, langage,
+        train_data, test_data = bow_features(raw_train_data, raw_test_data, language,
                                              ngram=ngram, min_df=min_df, max_df=max_df)
     else:
         raise ValueError('This is not an acceptable method !')
@@ -304,9 +295,9 @@ def wiki(input_path, method='we', seq_l=42, ngram=(1, 1), min_df=0.01,
         model = Kv.load_word2vec_format(fname, binary=bin)
         length_embedding = len(model['hello'])
 
-        processed_en = preprocess_tokenize(text_en, langage='en', ngram=ngram, min_df=min_df,
+        processed_en = preprocess_tokenize(text_en, language='en', ngram=ngram, min_df=min_df,
                                            max_df=max_df)
-        text_en = word_embeddings(processed_en, model=model, length_embedding=length_embedding, seq_l=seq_l)
+        text_en = word_embeddings(processed_en, model=model, length_embedding=length_embedding, seq_length=seq_l)
         print('third step')
         # French
         fname = 'data/word_embeddings/wiki.fr.vec.bin'
@@ -314,19 +305,19 @@ def wiki(input_path, method='we', seq_l=42, ngram=(1, 1), min_df=0.01,
         model = Kv.load_word2vec_format(fname, binary=bin)
         length_embedding = len(model['bonjour'])
 
-        processed_fr = preprocess_tokenize(text_fr, langage='fr', ngram=ngram, min_df=min_df,
+        processed_fr = preprocess_tokenize(text_fr, language='fr', ngram=ngram, min_df=min_df,
                                            max_df=max_df)
-        text_fr = word_embeddings(processed_fr, model=model, length_embedding=length_embedding, seq_l=seq_l)
+        text_fr = word_embeddings(processed_fr, model=model, length_embedding=length_embedding, seq_length=seq_l)
         print('French done')
     else:
         raise ValueError('This is not an acceptable method !')
 
-    text_en, text_fr = remove_empty(data = text_en,labels='wiki', list_labels=text_fr, method='we')
+    text_en, text_fr = remove_empty(data=text_en, labels='wiki', list_labels=text_fr, method='we')
 
     return text_en, text_fr
 
 
-def twitter(input_folder_path, files_nb, max_tweets, query, langage, method='we', seq_l=42):
+def twitter(input_folder_path, files_nb, max_tweets, query, langage, extended=False, method='we', seq_l=42):
     """
     Create the features for twitter files
     :param input_folder_path:
@@ -339,7 +330,12 @@ def twitter(input_folder_path, files_nb, max_tweets, query, langage, method='we'
     :return:
     """
 
-    fnames = [input_folder_path+'/twitter_server_'+str(i)+'__'+langage+'_'+str(max_tweets)+'_'+query+'.txt' for i in range(1, files_nb+1)]
+    if extended:
+        str_extended = '_extended'
+    else:
+        str_extended = ''
+    fnames = [input_folder_path + '/twitter_server_' + str(i) + '__' + langage + '_' + str(
+        max_tweets) + '_' + query + str_extended + '.txt' for i in range(1, files_nb + 1)]
 
     text = []
     for fname in fnames:
@@ -441,7 +437,6 @@ if __name__ == '__main__':
     """
     csv_file = 'data/wikipedia/samples.csv'
 
-    t1 = time.time()
     en, fr = wiki(csv_file)
     # print(en, fr)
     save_features(en, fr, [], [], '', method='wiki')
@@ -451,4 +446,20 @@ if __name__ == '__main__':
     A = np.load('data/features/en.npy')
     print(A.shape)
     """
-    train_data, test_data = twitter('data/twitter_queries', 304, 1000, 'all', 'fr')
+    langage1 = 'en'
+    query1 = 'yellowvest'
+    langage2 = 'fr'
+    query2 = 'giletsjaunes'
+    extended = True
+    if extended:
+        str_extended = '_extended'
+    else:
+        str_extended = ''
+
+    # train_data, test_data = twitter('data/twitter2', 1, 2000, query1, langage1, extended)
+    # data = np.concatenate((train_data, test_data), axis=0)
+    # np.save('data/features/twitter_'+langage1+'_'+query1+str_extended, data)
+
+    train_data, test_data = twitter('data/twitter2', 1, 2000, query2, langage2, extended)
+    data = np.concatenate((train_data, test_data), axis=0)
+    np.save('data/features/twitter_' + langage2 + '_' + query2 + str_extended, data)
