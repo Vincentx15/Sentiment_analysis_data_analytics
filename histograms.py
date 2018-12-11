@@ -39,14 +39,14 @@ def plot_lengths_movies_dataset():
     reviews_fr = data_fr['review']
     lengths_fr = [len(review.split()) for review in reviews_fr]
 
-    sns.distplot(lengths_en, hist=False, label="Allociné")
-    sns.distplot(lengths_fr, hist=False, label="Imdb")
+    sns.distplot(lengths_en, hist=True, label="Allociné")
+    sns.distplot(lengths_fr, hist=True, label="Imdb")
     plt.xlim(0, 600)
     plt.savefig('length.pdf')
     plt.show()
 
 
-def plot_wiki_distribution(fname):
+def plot_wiki_stability(fname):
     """
     Plot the wiki distributions
     :param fname: string, file to load
@@ -55,6 +55,45 @@ def plot_wiki_distribution(fname):
 
     wiki = np.load(fname)
     test_stable(wiki, [0.001, 0.01, 0.1, 0.9])
+
+
+def plot_wiki_distribution(en_fname, fr_fname):
+    """
+    Print wiki distributions
+    :param en_fname: string
+    :param fr_fname: string
+    :return: /
+    """
+
+    distrib_en = np.load(en_fname)
+    distrib_fr = np.load(fr_fname)
+
+    print('Means: en:', np.mean(distrib_en), '; fr:', np.mean(distrib_fr))
+
+    sns.distplot(distrib_en, hist=True, kde_kws={"color": "b", "lw": 2, "label": "Fr"})
+    sns.distplot(distrib_fr, hist=True, kde_kws={"color": "r", "lw": 2, "label": "En"})
+    plt.show()
+
+
+def plot_pred_and_labels(language, plot_labels, classifiers):
+    """
+    Plot the distributions of the true values and the predictions
+    :param language: string
+    :param plot_labels: bool
+    :param classifiers: list of string
+    :return:
+    """
+
+    if plot_labels:
+        *_, y_train, y_test = load_features(language, 'we')
+        y_true = np.concatenate((y_train, y_test), axis=0)
+        sns.distplot(y_true, hist=True, kde_kws={"color": "b", "lw": 2, "label": "True"})
+
+    for i in range(0, 3):
+        y_pred = np.load('data/saved_distributions/distributions_' + language + '_' + str(i) + '.npy')
+        sns.distplot(y_pred, hist=False, kde_kws={"label": classifiers[i]})
+
+    plt.show()
 
 
 def generate_mask(n, rate):
@@ -97,170 +136,38 @@ def test_stable(distribution, rates=0.7, savefig=None, print_mean=False):
     plt.show()
 
 
-if __name__ == '__main__':
+def plot_twitter_with_query(fname1, fname2, mean_calibration):
+    """
+    Plot twitter's prediction with a query
+    :param fname1: string
+    :param fname2: string
+    :param mean_calibration: float
+    :return: /
+    """
 
+    plot_1 = np.load('data/twitter/results/old_LSTM_we_en.npy') - mean_calibration
+    plot_2 = np.load('data/twitter/results/old_yellowvest_LSTM_we_en.npy') - mean_calibration
+
+    print("Means: {} & {}".format(np.mean(plot_1), np.mean(plot_1)))
+
+    sns.distplot(plot_1)
+    sns.distplot(plot_2)
+
+
+if __name__ == '__main__':
     # plot_lengths_movies_dataset()
     # plot_ratings_movies_dataset()
 
-    # plot_wiki_distribution('data/wikipedia/en_results_LSTM_we_en.npy')
-    # plot_wiki_distribution('data/wikipedia/fr_results_LSTM_we_fr.npy')
+    # plot_wiki_stability('data/wikipedia/en_results_LSTM_we_en.npy')
+    # plot_wiki_stability('data/wikipedia/fr_results_LSTM_we_fr.npy')
 
+    # ''' Means: en: 3.7348151; fr: 3.4951324'''
+    # plot_wiki_distribution('data/wikipedia/en_results_LSTM_we_en.npy', 'data/wikipedia/fr_results_LSTM_we_fr.npy')
 
-    """    
-    ###
-    language = 'fr'
-    
-    # Compute the true values
-    *_, y_train, y_test = load_features(language, 'we')
-    y_true = np.concatenate((y_train, y_test), axis=0)
-    
-    classifiers = ['LSTM']
-    methods = ['we']
-    y_pred = []
-    
-    for i in range(1):
-        print('')
-        print("{}/3...".format(i+1))
-        method = methods[i]
-        classifier = classifiers[i]
-        x_train, x_test, _, _ = load_features(language, method)
-        # load_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
-        load_file = 'data/model/final_' + classifier + '_' + method + '_' + language
-        model = load_classifier(classifier, load_file)
-        y_pred_train = predict_classifier(model, x_train)
-        y_pred_test = predict_classifier(model, x_test)
-        y_pred.append(np.concatenate((y_pred_train, y_pred_test), axis=0))
-    
-    # print("Textblob...")
-    
-    # data_en = pd.read_csv('data/raw_csv/imdb.csv')
-    # reviews_en = data_en['review']
-    # ratings_en = data_en['rating']
-    # results_en = [TextBlob(review).sentiment[0] for review in reviews_en]
-    # results_en = [2.5 * (res + 1) for res in results_en]
-    # results_en = np.array(results_en)
-    
-    # sns.distplot(y_true, hist=True, kde_kws={"color": "b", "lw": 2, "label": "True"})
-    sns.distplot(y_true, hist=True,kde=False, norm_hist=True)
-    sns.distplot(y_pred[0], hist=False, kde_kws={"color": "r", "lw": 2, "label": "Pred"})
-    # for i in range(1, 3):
-    #     y_pred = np.load('data/saved_distributions/distributions_' + language + '_' + str(i) + '.npy')
-    #     sns.distplot(y_pred, hist=False, kde_kws={"label": classifiers[i]})
-    
-    # sns.distplot(results_en, hist=False, kde_kws={"label": 'Textblob en'})
-    
-    # data_fr = pd.read_csv('data/raw_csv/allocine.csv')
-    # reviews_fr = data_fr['review']
-    # ratings_fr = data_fr['rating']
-    # results_fr = [TextBlob(review).sentiment[0] for review in reviews_fr]
-    # results_fr = [2.5 * (res + 1) for res in results_fr]
-    # results_fr = np.array(results_fr)
-    # sns.distplot(results_fr, hist=False, kde_kws={"label": 'Textblob Fr'})
-    
-    plt.show()
-    ###
-    
-    ###
-    distrib_en = np.load('data/wikipedia/results/en.npy')
-    distrib_fr = np.load('data/wikipedia/results/fr.npy')
-    
-    print('en', np.mean(distrib_en), 'fr', np.mean(distrib_fr))
-    # en 3.7348151 fr 3.4951324
-    
-    
-    sns.distplot(distrib_en, hist=False, kde_kws={"color": "b", "lw": 2, "label": "Fr"})
-    sns.distplot(distrib_fr, hist=False, kde_kws={"color": "r", "lw": 2, "label": "En"})
-    plt.show()
-    ###
-    
-    ###
-    # Histogram of the length of the reviews for imdb and allowiné
-    from features import *
-    
-    method = 'we'
-    langages = ['en', 'fr']
-    csv_files = ['data/raw_csv/imdb.csv', 'data/raw_csv/allocine.csv']
-    
-    for i in range(0,1):
-        langage = langages[i]
-        csv_file = csv_files[i]
-    
-        data = pd.read_csv(csv_file)
-        text = data['review'].values
-        labels = data['rating'].values
-    
-        # split data
-        raw_train_data, raw_test_data, train_labels, test_labels = train_test_split(text, labels,
-                                                                                    test_size=0.33, random_state=42)
-    
-        # Do the appropriate embedding on the text
-        processed_train_data = preprocess_tokenize(raw_train_data, langage=langage)
-        processed_test_data = preprocess_tokenize(raw_test_data, langage=langage)
-    
-        processed_data = processed_train_data + processed_test_data
-        preprocessed_length = [len(data) for data in processed_data]
-    
-        sns.distplot(preprocessed_length)
-        plt.show()
-    
-        print("Mean: {}; mode: {}".format(round(np.mean(preprocessed_length), 2), round(mode(preprocessed_length), 2)))
-    ###
-    
-    ###
-    # Histogram of the length of the tweets
-    from features import *
-    
-    files = ['data/features/twitter_en_all.npy', 'data/features/twitter_fr_all.npy']
-    
-    for i in range(1, 2):
-        file = files[i]
-    
-        data = np.load(file)
-        lengths = []
-        for i in range(data.shape[0]):
-            l = 0
-            for j in range(data.shape[1]):
-                if sum(data[i,j,:]) != 0:
-                    l += 1
-            lengths.append(l)
-    
-        sns.distplot(lengths,kde=False)
-        plt.show()
-    
-        print("Mean: {}; mode: {}".format(round(np.mean(lengths), 2), round(mode(lengths), 2)))
-    ###
-    
-    
-    #   Plot the wiki distributions
-    # en1 = np.load('data/twitter/results/twitter_yellowvest_LSTM_we_en.npy')
-    # fr = np.load('data/twitter/results/twitter_giletsjaunes_LSTM_we_fr.npy')
-    
-    # en = np.load('data/twitter/results/twitter_yellowvest_extended_LSTM_we_en.npy')
-    # fr = np.load('data/twitter/results/twitter_giletsjaunes_extended_LSTM_we_fr.npy')
-    
-    # en2 = np.load('data/twitter/results/twitter_all_LSTM_we_en.npy')
-    # fr = np.load('data/twitter/results/twitter_all_LSTM_we_fr.npy')
-    
-    # 3.73en
-    # 3.49fr
-    twitter_en_all = np.load('data/twitter/results/old_LSTM_we_en.npy')-3.73
-    twitter_en_yellowvest = np.load('data/twitter/results/old_yellowvest_LSTM_we_en.npy')-3.73
-    twitter_fr_all = np.load('data/twitter/results/old_LSTM_we_fr.npy')-3.49
-    twitter_fr_giletsjaunes = np.load('data/twitter/results/old_giletsjaunes_LSTM_we_fr.npy')-3.49
-    
-    print("Mean: {}".format(np.mean(twitter_en_all)))
-    print("Mean: {}".format(np.mean(twitter_en_yellowvest)))
-    print("Mean: {}".format(np.mean(twitter_fr_all)))
-    print("Mean: {}".format(np.mean(twitter_fr_giletsjaunes)))
-    # print("Mean: {}".format(np.mean(wiki_fr)))
-    
-    # sns.distplot(twitter_en_all, kde_kws={'label':'English Twitter'})
-    # sns.distplot(twitter_en_yellowvest, kde_kws={'label':'Query: "yellow vest"'})
-    # sns.distplot(twitter_fr_all, kde_kws={'label':'French Twitter'})
-    # sns.distplot(twitter_fr_giletsjaunes, kde_kws={'label':'Query: "gilets jaunes"'})
-    # plt.show()
-    # fr = twitter_fr_all
-    en = twitter_en_yellowvest
-    # test_stable(fr, [0.001, 0.01, 0.1, 0.9], savefig='wiki_fr.pdf')
-    test_stable(en, [0.01, 0.1, 0.9], savefig='wiki_en.pdf')
-    """
+    # plot_pred_and_labels('en', True, ['SVM', 'NN', 'LSTM'])
+    # plot_pred_and_labels('fr', True, ['SVM', 'NN', 'LSTM'])
+
+    # plot_twitter_with_query('data/twitter/results/old_LSTM_we_en.npy',
+    #                         'data/twitter/results/old_yellowvest_LSTM_we_en.npy', 3.73)
+    plot_twitter_with_query('data/twitter/results/old_LSTM_we_fr.npy',
+                            'data/twitter/results/old_giletsjaunes_LSTM_we_fr.npy', 3.49)
