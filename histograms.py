@@ -41,10 +41,9 @@ def plot_lengths_movies_dataset():
     reviews_fr = data_fr['review']
     lengths_fr = [len(review.split()) for review in reviews_fr]
 
-    sns.distplot(lengths_en, hist=True, label="Allociné")
-    sns.distplot(lengths_fr, hist=True, label="Imdb")
+    sns.distplot(lengths_en, hist=True, label="Allociné", bins=np.linspace(0, 600, 20))
+    sns.distplot(lengths_fr, hist=True, label="Imdb", bins=np.linspace(0, 600, 20))
     plt.xlim(0, 600)
-    plt.savefig('length.pdf')
     plt.show()
 
 
@@ -77,23 +76,29 @@ def plot_wiki_distribution(en_fname, fr_fname):
     plt.show()
 
 
-def plot_pred_and_labels(language, plot_labels, classifiers):
+def plot_pred_and_labels(language):
     """
     Plot the distributions of the true values and the predictions
     :param language: string
-    :param plot_labels: bool
-    :param classifiers: list of string
     :return:
     """
 
-    if plot_labels:
-        *_, y_train, y_test = load_features(language, 'we')
-        y_true = np.concatenate((y_train, y_test), axis=0)
-        sns.distplot(y_true, hist=True, kde_kws={"color": "b", "lw": 2, "label": "True"})
+    data_en = pd.read_csv('data/raw_csv/imdb.csv')
+    ratings_en = data_en['rating'] / 2
 
-    for i in range(0, 3):
-        y_pred = np.load('data/saved_distributions/distributions_' + language + '_' + str(i) + '.npy')
-        sns.distplot(y_pred, hist=False, kde_kws={"label": classifiers[i]})
+    data_fr = pd.read_csv('data/raw_csv/allocine.csv')
+    ratings_fr = data_fr['rating']
+
+    pred_en = np.load('data/predictions/imdb_LSTM_we_en.npy')
+    pred_fr = np.load('data/predictions/allocine_LSTM_we_fr.npy')
+
+    if language == 'en':
+        sns.distplot(ratings_en, hist=True, kde=False, label="Allociné", norm_hist=True)
+        sns.distplot(pred_en)
+
+    elif language == 'fr':
+        sns.distplot(ratings_fr, hist=True, kde=False, label="Imdb", norm_hist=True)
+        sns.distplot(pred_fr)
 
     plt.show()
 
@@ -161,6 +166,7 @@ def diff_distributions(a, b, percentile=5):
     dist_b, _ = np.histogram(inlier_b, bins=1000, range=range)
     dist_a = dist_a / np.sum(dist_a)
     dist_b = dist_b / np.sum(dist_b)
+
     # plt.plot(bins[:-1], dist_a - dist_b, label='b')
     # plt.show()
 
@@ -168,6 +174,7 @@ def diff_distributions(a, b, percentile=5):
     def cubic_root(x):
         if 0 <= x: return x ** (1. / 3.)
         return -(-x) ** (1. / 3.)
+
     integral_terms = np.multiply(np.array([cubic_root(x) for x in (dist_a - dist_b)]), bins[:-1])
     # print(integral_terms)
     # plt.plot(bins[:-1], integral_terms, label='integrated function')
@@ -229,23 +236,22 @@ def read_twitter_data(path):
     plt.show()
 
 
-
-
 if __name__ == '__main__':
     pass
+
+    mean_en = 3.34493
+    mean_fr = 3.44599
+
     # plot_lengths_movies_dataset()
     # plot_ratings_movies_dataset()
 
-    # plot_wiki_stability('data/wikipedia/en_results_LSTM_we_en.npy')
-    # plot_wiki_stability('data/wikipedia/fr_results_LSTM_we_fr.npy')
+    # plot_wiki_stability('data/predictions/wikipedia_LSTM_we_en.npy')
+    # plot_wiki_stability('data/predictions/wikipedia_LSTM_we_fr.npy')
 
-    # ''' Means: en: 3.7348151; fr: 3.4951324'''
-    # plot_wiki_distribution('data/wikipedia/en_results_LSTM_we_en.npy', 'data/wikipedia/fr_results_LSTM_we_fr.npy')
+    # plot_wiki_distribution('data/predictions/wikipedia_LSTM_we_en.npy', 'data/predictions/wikipedia_LSTM_we_fr.npy')
 
-    # print("Mean: {}; mode: {}".format(round(np.mean(preprocessed_length), 2), round(mode(preprocessed_length), 2)))
-
-    # plot_pred_and_labels('en', True, ['SVM', 'NN', 'LSTM'])
-    # plot_pred_and_labels('fr', True, ['SVM', 'NN', 'LSTM'])
+    # plot_pred_and_labels('en')
+    # plot_pred_and_labels('fr')
 
     # read_twitter_data('data/twitter/toto')
 
@@ -253,5 +259,6 @@ if __name__ == '__main__':
     #                         'data/twitter/results/old_yellowvest_LSTM_we_en.npy', 3.73)
     # plot_twitter_with_query('data/twitter/results/old_LSTM_we_fr.npy',
     #                         'data/twitter/results/old_giletsjaunes_LSTM_we_fr.npy', 3.49)
-
-
+    # sns.distplot(np.load('data/predictions/twitter_LSTM_we_en_yellowvest_extended.npy'))
+    sns.distplot(np.load('data/predictions/twitter_LSTM_we_fr_giletsjaunes_extended.npy'))
+    plt.show

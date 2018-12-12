@@ -4,16 +4,15 @@ from features import load_features, save_prediction
 """ Parameters """
 classifier = 'LSTM'
 method = 'we'
-database = 'twitter'
-# language = 'fr'
-# query = 'giletsjaunes'
-language = 'en'
-query = 'yellowvest'
-extended = True
+database = 'allocine'
+language = 'fr'
+query = ''
+extended = False
 
 """ Load the data """
-# x_train, x_test, y_train, y_test = load_features(database, language, method)
-x_test = load_features(database, language, method, query, extended)
+x_train, x_test, y_train, y_test = load_features(database, language, method)
+# x_test = load_features(database, language, method, query, extended)
+x_test = np.concatenate((x_train, x_test), axis=0)
 
 """ Load a classifier """
 # load_file = 'data/model/untrained_' + classifier
