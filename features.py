@@ -20,6 +20,10 @@ stop_words_en = list(set(stop_words_en) - set(to_keep_en))
 
 
 class FrenchLemmaTokenizer(object):
+    """
+    This is basically a function with a shared memory between calls for the wnl frenchstemmer
+    """
+
     def __init__(self):
         self.wnl = FrenchStemmer()
 
@@ -28,6 +32,10 @@ class FrenchLemmaTokenizer(object):
 
 
 class EnglishLemmaTokenizer(object):
+    """
+    Same thing here
+    """
+
     def __init__(self):
         self.wnl = WordNetLemmatizer()
 
@@ -38,13 +46,13 @@ class EnglishLemmaTokenizer(object):
 def bow_features(raw_train_data, raw_test_data, language, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
     Perform bow embedding with the given parameters, the training is only conducted on the train
-    :param raw_train_data:
-    :param raw_test_data:
-    :param language:
-    :param ngram:
-    :param min_df:
-    :param max_df:
-    :return:
+    :param raw_train_data: list (iterable) of text items
+    :param raw_test_data: list (iterable) of text items
+    :param language: 'en' or 'fr'
+    :param ngram: range of the n-gram to use (1,1) or (1,2) mostly
+    :param min_df: cutoff for unfrequent words, between 0 and max_df
+    :param max_df: cutoff for too frequent words or context specific stop words, between min_df and 1
+    :return: processed train/test data
     """
 
     if language == 'en':
@@ -69,13 +77,13 @@ def bow_features(raw_train_data, raw_test_data, language, ngram=(1, 1), min_df=0
 
 def preprocess_tokenize(data, language, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
-    Read a list of strings. return a list of list of words without stopwords
-    :param data:
-    :param language:
-    :param ngram:
-    :param min_df:
-    :param max_df:
-    :return:
+    Read a list of strings. return a list of list of words without stopwords, tokenized
+    :param data: list (iterable) of text items
+    :param language: 'en' or 'fr'
+    :param ngram: range of the n-gram to use (1,1) or (1,2) mostly
+    :param min_df: cutoff for unfrequent words, between 0 and max_df
+    :param max_df: cutoff for too frequent words or context specific stop words, between min_df and 1
+    :return: processed data
     """
 
     if language == 'en':
@@ -144,6 +152,7 @@ def we_features(raw_train_data, raw_test_data, language, min_seq_length, max_seq
                 max_df=0.9):
     """
     Wrapper for word embedding features to take two sets (training and test)
+<<<<<<< HEAD
     :param raw_train_data:
     :param raw_test_data:
     :param language:
@@ -153,6 +162,15 @@ def we_features(raw_train_data, raw_test_data, language, min_seq_length, max_seq
     :param min_df:
     :param max_df:
     :return:
+=======
+    :param raw_train_data: list (iterable) of text items
+    :param raw_test_data: list (iterable) of text items
+    :param language: 'en' or 'fr'
+    :param ngram: range of the n-gram to use (1,1) or (1,2) mostly
+    :param min_df: cutoff for unfrequent words, between 0 and max_df
+    :param max_df: cutoff for too frequent words or context specific stop words, between min_df and 1
+    :return: processed train/test data
+>>>>>>> 52739c421e2c91400afce6a731b193a38543548a
     """
 
     # Load the pretrained model

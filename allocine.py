@@ -1,4 +1,3 @@
-# Import libs
 import pandas as pd
 import os
 from requests import get
@@ -11,10 +10,15 @@ from warnings import warn
 from time import time
 
 
-# Function to scrape the movies urls from http://www.allocine.fr/films/
-# Choose the page range with the two parameters start_page and end_page.
-# The url list is save as a csv file: movie_url.csv
 def getMoviesUrl(start_page, end_page, path='data/allocine/url/'):
+    """
+    Function to scrape the movies urls from http://www.allocine.fr/films/
+    Choose the page range with the two parameters start_page and end_page.
+    :param start_page: int
+    :param end_page: int
+    :param path: dir : where to save
+    :return: nothing; The url list is save as a csv file
+    """
     # Set the list
     movies_list = []
     movies_number = 0
@@ -56,6 +60,10 @@ def getMoviesUrl(start_page, end_page, path='data/allocine/url/'):
 def chunks_movie_url(start_page, end_page, chunksize=20, path='data/allocine/url/'):
     """
     Wrapping of the previous method in one that does chunks to avoid loosing info
+    :param start_page: int
+    :param end_page: int
+    :param path: dir : where to save
+    :return: nothing; The url list is save as a csv file
     """
     indexes = [(i, i + chunksize - 1) for i in range(start_page, end_page, chunksize)]
     for start_page, end_page in indexes:
@@ -71,9 +79,9 @@ def chunks_movie_url(start_page, end_page, chunksize=20, path='data/allocine/url
 
 def get_reviews_press(url, threshold=10):
     """
-    fetch the reviews for one url for allociné reviews page
-    :param url: query
-    :param threshold: number of comments to fetch for this movie
+    fetch the reviews for one url for allociné reviews page for the press
+    :param url: query, as a string
+    :param threshold: number of comments to fetch for this movie, too much will put some autocorrelation in the dataset
     :return: list of tuples (text, rating)
     """
     # access the page
@@ -113,8 +121,8 @@ def get_reviews_press(url, threshold=10):
 
 def get_reviews_spectator(url, threshold=10):
     """
-    fetch the reviews for one url for allociné reviews page
-    :param url: query
+    fetch the reviews for one url for allociné reviews page for the spectators
+    :param url: string, query
     :param threshold: number of comments to fetch for this movie
     :return: list of tuples (text, rating)
     """
@@ -157,8 +165,8 @@ def get_reviews_spectator(url, threshold=10):
 
 def process_movie_list(movie_list, page, output_path='data/allocine/data/', threshold=10):
     """
-    Given a list of ids,
-    :param movie_list: list of ids
+    Given a list of ids, get all the reviews from both the press and the spectators
+    :param movie_list: list of ids (int)
     :param page: page from which the ids where fetched
     :param output_path: where to save the extracted data
     :return: (result df, error dataframe)
