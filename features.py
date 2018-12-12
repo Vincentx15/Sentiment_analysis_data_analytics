@@ -10,7 +10,13 @@ from nltk.stem import WordNetLemmatizer
 import scipy.sparse as sp
 
 stop_words_fr = get_stop_words('fr')
+to_keep_fr = ["bon", "moins", "ni", "pas", "peu", "tellement", "trop", "très"]
+stop_words_fr = list(set(stop_words_fr) - set(to_keep_fr))
+
 stop_words_en = get_stop_words('en')
+to_keep_en = ["aren't", "didn't", "doesn't", "don't", "isn't", "more", "most", "mustn't", "no", "nor", "not", "so",
+              "too", "very", "wasn't", "weren't"]
+stop_words_en = list(set(stop_words_en) - set(to_keep_en))
 
 
 class FrenchLemmaTokenizer(object):
@@ -88,13 +94,14 @@ def preprocess_tokenize(data, language, ngram=(1, 1), min_df=0.01, max_df=0.9):
     return processed
 
 
-def word_embeddings(preprocessed_data, model, length_embedding, seq_length):
+def word_embeddings(preprocessed_data, model, length_embedding, min_seq_length, max_seq_length):
     """
     Returns a feature list with for each sample the embeddings of the words in the sentence
     :param preprocessed_data: list of list of string, sentences to process
     :param model: a word embedding model
     :param length_embedding: the length of each of the embedding vectors
-    :param seq_length: int, length of the sequence we want to return
+    :param min_seq_length: int, min length of the sequence we want to return
+    :param max_seq_length: int, max length of the sequence we want to return
     :return: list of either [] or word_embedding*seq_l
     """
 
@@ -113,16 +120,19 @@ def word_embeddings(preprocessed_data, model, length_embedding, seq_length):
         if sentence_embedding:
 
             # Remove elements if necessary
-            if len(sentence_embedding) >= seq_length:
-                sentence_embedding = np.asarray(sentence_embedding[0:seq_length])
+            if len(sentence_embedding) >= max_seq_length:
+                sentence_embedding = np.asarray(sentence_embedding[0:max_seq_length])
                 x.append(sentence_embedding)
 
             # Perform zero-padding if necessary
-            else:
-                for i in range(seq_length - len(sentence_embedding)):
+            elif len(sentence_embedding) >= min_seq_length:
+                for i in range(max_seq_length - len(sentence_embedding)):
                     sentence_embedding.append(np.zeros(length_embedding))
                 sentence_embedding = np.asarray(sentence_embedding)
                 x.append(sentence_embedding)
+
+            else:
+                x.append([])
 
         else:
             x.append([])
@@ -130,13 +140,15 @@ def word_embeddings(preprocessed_data, model, length_embedding, seq_length):
     return x
 
 
-def we_features(raw_train_data, raw_test_data, language, seq_length, ngram=(1, 1), min_df=0.01, max_df=0.9):
+def we_features(raw_train_data, raw_test_data, language, min_seq_length, max_seq_length, ngram=(1, 1), min_df=0.01,
+                max_df=0.9):
     """
     Wrapper for word embedding features to take two sets (training and test)
     :param raw_train_data:
     :param raw_test_data:
     :param language:
-    :param seq_length:
+    :param min_seq_length:
+    :param max_seq_length:
     :param ngram:
     :param min_df:
     :param max_df:
@@ -162,12 +174,12 @@ def we_features(raw_train_data, raw_test_data, language, seq_length, ngram=(1, 1
     processed_train_data = preprocess_tokenize(raw_train_data, language=language, ngram=ngram, min_df=min_df,
                                                max_df=max_df)
     train_data = word_embeddings(processed_train_data, model=model, length_embedding=length_embedding,
-                                 seq_length=seq_length)
+                                 min_seq_length=min_seq_length, max_seq_length=max_seq_length)
 
     processed_test_data = preprocess_tokenize(raw_test_data, language=language, ngram=ngram, min_df=min_df,
                                               max_df=max_df)
     test_data = word_embeddings(processed_test_data, model=model, length_embedding=length_embedding,
-                                seq_length=seq_length)
+                                min_seq_length=min_seq_length, max_seq_length=max_seq_length)
 
     return train_data, test_data
 
@@ -224,14 +236,15 @@ def remove_empty(data, labels=None, list_labels=None, method='bow'):
     return clean_data, clean_labels
 
 
-def create_features(database, language, method, seq_length=42, ngram=(1, 1), min_df=0.01,
+def create_features(database, language, method, min_seq_length=5, max_seq_length=20, ngram=(1, 1), min_df=0.01,
                     max_df=0.9, labels_name='rating', text_column='review', files_nb=0, max_tweets=0, query='',
                     extended=False):
     """
     Creates features
     :param database: path of the csv to read
     :param language:
-    :param seq_length:
+    :param min_seq_length:
+    :param max_seq_length:
     :param ngram:
     :param min_df:
     :param max_df:
@@ -252,18 +265,19 @@ def create_features(database, language, method, seq_length=42, ngram=(1, 1), min
         data = pd.read_csv('data/raw_csv/allocine.csv')
 
     elif database == 'wikipedia':
-        fname = 'data/wikipedia/samples.csv'
-        text_en, text_fr = wiki(fname, method=method, seq_length=seq_length, ngram=ngram,
-                                min_df=min_df, max_df=max_df)
+        fname = 'data/raw_csv/wikipedia.csv'
+        text_en, text_fr = wiki(fname, method=method, min_seq_length=min_seq_length, max_seq_length=max_seq_length,
+                                ngram=ngram, min_df=min_df, max_df=max_df)
         if language == 'en':
             return text_en
         elif language == 'fr':
             return text_fr
 
     elif database == 'twitter':
-        input_folder_path = 'data/twitter2'
+        input_folder_path = 'data/twitter'
         data = twitter(input_folder_path, files_nb, max_tweets, query, language, extended=extended, method=method,
-                       seq_length=seq_length, ngram=ngram, min_df=min_df, max_df=max_df)
+                       min_seq_length=min_seq_length, max_seq_length=max_seq_length, ngram=ngram, min_df=min_df,
+                       max_df=max_df)
         return data
 
     else:
@@ -287,9 +301,8 @@ def create_features(database, language, method, seq_length=42, ngram=(1, 1), min
 
     # Do the appropriate embedding on the text
     if method == 'we':
-        train_data, test_data = we_features(raw_train_data, raw_test_data, language, seq_length, ngram=ngram,
-                                            min_df=min_df,
-                                            max_df=max_df)
+        train_data, test_data = we_features(raw_train_data, raw_test_data, language, min_seq_length=min_seq_length,
+                                            max_seq_length=max_seq_length, ngram=ngram, min_df=min_df, max_df=max_df)
     elif method == 'bow':
         train_data, test_data = bow_features(raw_train_data, raw_test_data, language,
                                              ngram=ngram, min_df=min_df, max_df=max_df)
@@ -298,8 +311,12 @@ def create_features(database, language, method, seq_length=42, ngram=(1, 1), min
 
     # return the approriate data
     if labels_name:
-        train_data, train_labels = remove_empty(train_data, train_labels, method)
-        test_data, test_labels = remove_empty(test_data, test_labels, method)
+        train_data, train_labels = remove_empty(train_data, labels_name, train_labels, method)
+        test_data, test_labels = remove_empty(test_data, labels_name, test_labels, method)
+
+        if 'database' == 'imdb':
+            train_labels = np.divide(train_labels, 2.0)
+            test_labels = np.divide(test_labels, 2.0)
 
         return train_data, test_data, train_labels, test_labels
 
@@ -308,12 +325,13 @@ def create_features(database, language, method, seq_length=42, ngram=(1, 1), min
     return train_data, test_data
 
 
-def wiki(input_path, method='we', seq_length=42, ngram=(1, 1), min_df=0.01, max_df=0.9):
+def wiki(input_path, method='we', min_seq_length=5, max_seq_length=20, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
     Functions for wikipedia features
     :param input_path:
     :param method:
-    :param seq_length:
+    :param min_seq_length:
+    :param max_seq_length:
     :param ngram:
     :param min_df:
     :param max_df:
@@ -334,8 +352,8 @@ def wiki(input_path, method='we', seq_length=42, ngram=(1, 1), min_df=0.01, max_
 
         processed_en = preprocess_tokenize(text_en, language='en', ngram=ngram, min_df=min_df,
                                            max_df=max_df)
-        text_en = word_embeddings(processed_en, model=model, length_embedding=length_embedding, seq_length=seq_length)
-        print('third step')
+        text_en = word_embeddings(processed_en, model=model, length_embedding=length_embedding,
+                                  min_seq_length=min_seq_length, max_seq_length=max_seq_length)
         # French
         fname = 'data/word_embeddings/wiki.fr.vec.bin'
         bin = True
@@ -344,7 +362,8 @@ def wiki(input_path, method='we', seq_length=42, ngram=(1, 1), min_df=0.01, max_
 
         processed_fr = preprocess_tokenize(text_fr, language='fr', ngram=ngram, min_df=min_df,
                                            max_df=max_df)
-        text_fr = word_embeddings(processed_fr, model=model, length_embedding=length_embedding, seq_length=seq_length)
+        text_fr = word_embeddings(processed_fr, model=model, length_embedding=length_embedding,
+                                  min_seq_length=min_seq_length, max_seq_length=max_seq_length)
         print('French done')
     else:
         raise ValueError('This is not an acceptable method !')
@@ -354,14 +373,19 @@ def wiki(input_path, method='we', seq_length=42, ngram=(1, 1), min_df=0.01, max_
     return text_en, text_fr
 
 
-def twitter(input_folder_path, files_nb, max_tweets, query, language, extended=False, method='we', seq_length=42,
-            ngram=(1, 1), min_df=0.01, max_df=0.9):
+def twitter(input_folder_path, files_nb, max_tweets, query, language, extended=False, method='we', min_seq_length=5,
+            max_seq_length=20, ngram=(1, 1), min_df=0.01, max_df=0.9):
     """
     Create the features for twitter files
     :param input_folder_path:
+    :param files_nb:
+    :param max_tweets:
+    :param query:
     :param language:
+    :param extended:
     :param method:
-    :param seq_length:
+    :param min_seq_length:
+    :param max_seq_length:
     :param ngram:
     :param min_df:
     :param max_df:
@@ -395,8 +419,8 @@ def twitter(input_folder_path, files_nb, max_tweets, query, language, extended=F
 
     # Do the appropriate embedding on the text
     if method == 'we':
-        train_data, test_data = we_features(raw_train_data, raw_test_data, language, seq_length, ngram=ngram,
-                                            min_df=min_df, max_df=max_df)
+        train_data, test_data = we_features(raw_train_data, raw_test_data, language, min_seq_length=min_seq_length,
+                                            max_seq_length=max_seq_length, ngram=ngram, min_df=min_df, max_df=max_df)
     elif method == 'bow':
         train_data, test_data = bow_features(raw_train_data, raw_test_data, language, ngram=ngram, min_df=min_df,
                                              max_df=max_df)
@@ -409,7 +433,8 @@ def twitter(input_folder_path, files_nb, max_tweets, query, language, extended=F
     return data
 
 
-def save_features(database, language, method, train_data=None, test_data=None, train_labels=None, test_labels=None):
+def save_features(database, language, method, train_data=None, test_data=None, train_labels=None, test_labels=None,
+                  query='all', extended=False):
     """
     Save the features
     :param database:
@@ -419,41 +444,70 @@ def save_features(database, language, method, train_data=None, test_data=None, t
     :param test_data:
     :param train_labels:
     :param test_labels:
+    :param query:
+    :param extended:
     :return:
     """
     fname = "data/features/" + database + '_'
-    if method == "bow":
-        if train_data:
+    if database in ['allocine', 'imdb']:
+        if method == "bow":
             sp.save_npz(fname + 'train_data_bow_' + language + '.npz', train_data)
-        if test_data:
             sp.save_npz(fname + 'test_data_bow_' + language + '.npz', test_data)
-        if train_labels:
             np.save(fname + 'train_labels_bow_' + language, train_labels)
-        if test_labels:
             np.save(fname + 'test_labels_bow_' + language, test_labels)
-        print("Data saved.")
+            print("Data saved.")
 
-    elif method == "we":
-        if train_data:
+        elif method == "we":
             np.save(fname + 'train_data_we_' + language, train_data)
-        if test_data:
             np.save(fname + 'test_data_we_' + language, test_data)
-        if train_labels:
             np.save(fname + 'train_labels_we_' + language, train_labels)
-        if test_labels:
             np.save(fname + 'test_labels_we_' + language, test_labels)
-        print("Data saved.")
+            print("Data saved.")
+
+        else:
+            raise ValueError("Wrong method.")
+
+    elif database == 'wikipedia':
+        if method == "bow":
+            sp.save_npz(fname + 'test_data_bow_' + language + '.npz', test_data)
+            print("Data saved.")
+
+        elif method == "we":
+            np.save(fname + 'test_data_we_' + language, test_data)
+            print("Data saved.")
+
+        else:
+            raise ValueError("Wrong method.")
+
+    elif database == 'twitter':
+        if extended:
+            str_extended = 'extended'
+        else:
+            str_extended = ''
+
+        if method == "bow":
+            sp.save_npz(fname + 'test_data_bow_' + language + '_' + query + '_' + str_extended + '.npz', test_data)
+            print("Data saved.")
+
+        elif method == "we":
+            np.save(fname + 'test_data_we_' + language + '_' + query + '_' + str_extended, test_data)
+            print("Data saved.")
+
+        else:
+            raise ValueError("Wrong method.")
 
     else:
-        raise ValueError("Wrong method.")
+        raise ValueError("Wrong database.")
 
 
-def load_features(database, language, method):
+def load_features(database, language, method, query='all', extended=False):
     """
     Load the features
     :param database:
     :param language:
     :param method:
+    :param query:
+    :param extended:
     :return:
     """
     fname = "data/features/" + database + '_'
@@ -482,16 +536,102 @@ def load_features(database, language, method):
 
         else:
             raise ValueError("Wrong method.")
+
+    elif database == 'wikipedia':
+        if method == "bow":
+            test_data = sp.load_npz(fname + 'test_data_bow_' + language + '.npz')
+            print("Data loaded.")
+            return test_data
+
+        elif method == "we":
+            test_data = np.load(fname + 'test_data_we_' + language + '.npy')
+            print("Data loaded.")
+            return test_data
+
+    elif database == 'twitter':
+        if extended:
+            str_extended = 'extended'
+        else:
+            str_extended = ''
+
+        if method == "bow":
+            test_data = sp.load_npz(fname + 'test_data_bow_' + language + '_' + query + '_' + str_extended + '.npz')
+            print("Data loaded.")
+            return test_data
+
+        elif method == "we":
+            test_data = np.load(fname + 'test_data_we_' + language + '_' + query + '_' + str_extended + '.npy')
+            print("Data loaded.")
+            return test_data
+
     else:
-        raise ValueError("Not supported database")
+        raise ValueError("Wrong database")
+
+
+def save_prediction(y_pred, database, classifier, method, language, query='all', extended=False):
+    """
+    Save a prediction
+    :param database:
+    :param classifier:
+    :param method:
+    :param language:
+    :param query:
+    :param extended:
+    :return:
+    """
+
+    if database in ['allocine', 'imdb', 'wikipedia']:
+        np.save('data/predictions/' + database + '_' + classifier + '_' + method + '_' + language, y_pred)
+
+    elif database == 'twitter':
+        if extended:
+            str_extended = 'extended'
+        else:
+            str_extended = ''
+        np.save('data/predictions/' + database + '_' + classifier + '_' + method + '_' + language + '_' + query + '_' +
+                str_extended, y_pred)
+
+    else:
+        raise ValueError("Wrong database.")
 
 
 if __name__ == '__main__':
-
-    database = 'imdb'
-    language = 'en'
+    '''
+    database = 'allocine'
+    language = 'fr'
     method = 'we'
-    seq_length = 42
+    min_seq_length = 5
+    max_seq_length = 20
 
-    # train_data, test_data, train_labels, test_labels = create_features(database, language, method, seq_length)
-    # save_features(train_data, test_data, train_labels, test_labels, language, method)
+    train_data, test_data, train_labels, test_labels = create_features(database, language, method,
+                                                                       min_seq_length=min_seq_length,
+                                                                       max_seq_length=max_seq_length)
+    '''
+    '''
+    database = 'wikipedia'
+    language = 'fr'
+    method = 'we'
+    min_seq_length = 5
+    max_seq_length = 20
+
+    test_data = create_features(database, language, method,
+                                min_seq_length=min_seq_length,
+                                max_seq_length=max_seq_length)
+    save_features(database, language, method, test_data=test_data)
+    '''
+
+    database = 'twitter'
+    # language = 'fr'
+    # query = 'giletsjaunes'
+    language = 'en'
+    query = 'yellowvest'
+    method = 'we'
+    min_seq_length = 5
+    max_seq_length = 20
+    files_nb = 1
+    max_tweets = 2000
+    extended = True
+
+    test_data = create_features(database, language, method, query=query, files_nb=files_nb, max_tweets=max_tweets,
+                                extended=extended, min_seq_length=min_seq_length, max_seq_length=max_seq_length)
+    save_features(database, language, method, test_data=test_data, query=query, extended=extended)

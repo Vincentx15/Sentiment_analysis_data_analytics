@@ -1,39 +1,39 @@
 from classifier import *
-from features import load_features
+from features import load_features, save_prediction
 
-# Parameters
+""" Parameters """
 classifier = 'LSTM'
 method = 'we'
+database = 'twitter'
+# language = 'fr'
+# query = 'giletsjaunes'
 language = 'en'
+query = 'yellowvest'
+extended = True
 
-# Load the data
-# x_train, x_test, y_train, y_test = load_features(language, method)
-# x_test = np.load('data/features/twitter_fr_all.npy')
-# x_test = np.load('data/features/en.npy')
-x_test = np.load('data/features/twitter_en_yellowvest.npy')
+""" Load the data """
+# x_train, x_test, y_train, y_test = load_features(database, language, method)
+x_test = load_features(database, language, method, query, extended)
 
-# Load a classifier
+""" Load a classifier """
 # load_file = 'data/model/untrained_' + classifier
-# load_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
-load_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
-
+load_file = 'data/model/best_trained_' + classifier + '_' + method + '_' + language
 model = load_classifier(classifier, load_file)
 
 '''
-# Train the classifier
-epochs = 14
+""" Train the classifier """
+epochs = 5
 batch_size = 16
 validation_data = (x_test, y_test)
-save_file = 'data/model/test_3_retrained_bis_random_trained_' + classifier + '_' + method + '_' + language
+save_file = 'data/model/trained_' + classifier + '_' + method + '_' + language
 model = train_classifier(classifier, model, x_train, y_train, epochs, batch_size, validation_data,
                          save_file=save_file+'.h5')
-
-# Predict on the test set
 model = load_classifier(classifier, save_file)
 '''
 
+""" Make a prediction """
 y_pred = predict_classifier(model, x_test)
-np.save('data/twitter/results/old_yellowvest_'+classifier+'_'+method+'_'+language, y_pred)
+save_prediction(y_pred, database, classifier, method, language, query, extended)
 
 '''
 # Compute the performance

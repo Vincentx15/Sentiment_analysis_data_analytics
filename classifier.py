@@ -225,23 +225,63 @@ def create_classifier(classifier):
     elif classifier == "LSTM":
 
         # Parameters
-        input_shape = (42, 300)  # Tuple of int
+        input_shape = (20, 300)  # Tuple of int
+        '''
+        ### 1
+        cells = 2
+        units = [16, 4]
+        return_sequences = [True, False]
+        activations = ['tanh', 'linear']
+        dropout = 0.2
+        optimizer = 'RMSprop'
+        nn_layers = [1]
+        nn_activations = ['relu']
+        loss = 'mean_squared_error'  # String
+        ###
+        '''
+        '''
+        ### 2
+        cells = 2
+        units = [16, 8]
+        return_sequences = [True, False]
+        activations = ['elu', 'relu']
+        dropout = 0.2
+        optimizer = 'RMSprop'
+        nn_layers = [4, 1]
+        nn_activations = ['elu', 'relu']
+        loss = 'mean_squared_error'  # String
+        ###
+        '''
+        '''
+        ### 3 (old)
         cells = 2  # Int
         units = [32, 16]  # List of int
         return_sequences = [True, False]  # List of bool
-        activation = 'tanh'  # String
+        activations = ['tanh', 'tanh']  # String
         dropout = 0.5  # Float
         loss = 'mean_squared_error'  # String
         optimizer = 'adam'  # String
         nn_layers = [8, 1]  # List of int
         nn_activations = ['relu', 'relu']  # List of string
-
+        ###
+        '''
+        ### 4
+        cells = 2  # Int
+        units = [32, 16]  # List of int
+        return_sequences = [True, False]  # List of bool
+        activations = ['elu', 'relu']  # String
+        dropout = 0.3  # Float
+        loss = 'mean_squared_error'  # String
+        optimizer = 'adam'  # String
+        nn_layers = [8, 1]  # List of int
+        nn_activations = ['elu', 'relu']  # List of string
+        ###
         # Create model
         model = Sequential()
-        model.add(GRU(input_shape=input_shape, units=units[0], activation=activation, dropout=dropout,
+        model.add(GRU(input_shape=input_shape, units=units[0], activation=activations[0], dropout=dropout,
                   return_sequences=return_sequences[0]))
         for i in range(1, cells):
-            model.add(GRU(units=units[i], activation=activation, dropout=dropout, return_sequences=return_sequences[i]))
+            model.add(GRU(units=units[i], activation=activations[i], dropout=dropout, return_sequences=return_sequences[i]))
         for i in range(len(nn_layers)):
             model.add(Dense(units=nn_layers[i], activation=nn_activations[i]))
         model.compile(loss=loss, optimizer=optimizer)
@@ -338,4 +378,4 @@ if __name__ == '__main__':
 
     # Save model
     fname = 'data/model/untrained_' + classifier  # String, name of the file to save/load with no extension
-    # save_classifier(classifier, model, fname)
+    save_classifier(classifier, model, fname)
