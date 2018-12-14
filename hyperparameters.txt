@@ -18,4 +18,6 @@ The  best  results  were  obtained  with  the  following model.
 —  activations of the layers are elu and relu respectively
 —  a dropout of 0.3 is applied
 —  the loss is the mean squared error
-—  the optimizer is adam  
+—  the optimizer is adam
+
+The training was performed with batch-size 16 for 5 (allocine) and 10 (imdb) epochs.  

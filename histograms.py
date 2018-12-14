@@ -66,13 +66,13 @@ def plot_wiki_distribution(en_fname, fr_fname):
     :return: /
     """
 
-    distrib_en = np.load(en_fname)
-    distrib_fr = np.load(fr_fname)
+    distrib_en = np.load(en_fname) -mean_en
+    distrib_fr = np.load(fr_fname)-mean_fr
 
     print('Means: en:', np.mean(distrib_en), '; fr:', np.mean(distrib_fr))
 
-    sns.distplot(distrib_en, hist=True, kde_kws={"color": "b", "lw": 2, "label": "Fr"})
-    sns.distplot(distrib_fr, hist=True, kde_kws={"color": "r", "lw": 2, "label": "En"})
+    sns.distplot(distrib_en, hist=True, kde_kws={"color": "b", "label": "French Twitter"}, axlabel="ratings")
+    sns.distplot(distrib_fr, hist=True, kde_kws={"color": "r", "label": '"gilets jaunes" query'})
     plt.show()
 
 
@@ -128,7 +128,7 @@ def test_stable(distribution, rates=0.7, savefig=None, print_mean=False):
     if print_mean:
         print(np.mean(distribution))
     n = len(distribution)
-    sns.distplot(distribution, hist=False, label='Full', kde_kws={"lw": 4})
+    sns.distplot(distribution, hist=False, label='Full', kde_kws={"lw": 4},axlabel='Ratings')
 
     # If iterable loop otherwise just one go
     try:
@@ -246,6 +246,7 @@ if __name__ == '__main__':
     # plot_wiki_stability('data/predictions/wikipedia_LSTM_we_fr.npy')
 
     # plot_wiki_distribution('data/predictions/wikipedia_LSTM_we_en.npy', 'data/predictions/wikipedia_LSTM_we_fr.npy')
+    # plot_wiki_distribution('data/predictions/twitter_LSTM_we_fr_all_extended.npy', 'data/predictions/twitter_LSTM_we_fr_giletsjaunes_extended.npy')
 
     # plot_pred_and_labels('en')
     # plot_pred_and_labels('fr')
@@ -258,13 +259,23 @@ if __name__ == '__main__':
     #                         'data/twitter/results/old_giletsjaunes_LSTM_we_fr.npy', 3.49)
     # sns.distplot(np.load('data/predictions/twitter_LSTM_we_en_yellowvest_extended.npy'))
 
-    data_fr = np.load('data/predictions/twitter_LSTM_we_fr_Macron_extended.npy')-mean_fr
-    sns.distplot(data_fr)
-    print(np.mean(data_fr))
+    data_1 = np.load('data/predictions/twitter_LSTM_we_en_all_extended.npy')-mean_en
+    # sns.distplot(data_1, axlabel='ratings', hist=True, norm_hist=True, label="English Twitter")
+    print(np.mean(data_1))
 
-    # data_en = np.load('data/predictions/twitter_LSTM_we_en_all_extended.npy') - mean_en
-    # sns.distplot(data_en)
-    # print(np.mean(data_en))
+    data_2 = np.load('data/predictions/twitter_LSTM_we_en_yellowvest_extended.npy') - mean_en
+    # sns.distplot(data_2, hist=True, norm_hist=True, label='"Trump" query')
+    print(np.mean(data_2))
     #
     # plt.show
-    test_stable(data_fr,[0.001, 0.01, 0.1])
+    # data_en = np.load('data/predictions/twitter_LSTM_we_en_all_extended.npy')
+    # test_stable(data_en,[0.001, 0.01, 0.1])
+
+    # wiki_en = np.load('data/predictions/wikipedia_LSTM_we_en.npy')
+    # wiki_fr = np.load('data/predictions/wikipedia_LSTM_we_fr.npy')
+    # sns.distplot(wiki_fr,axlabel="ratings",hist=False, label="French")
+    # sns.distplot(wiki_en,hist=False, label="English")
+    # plt.show()
+    # y = np.load('data/predictions/twitter_LSTM_we_fr_test_extended.npy')
+    # x = range(20)
+    # plt.plot(x,y)
