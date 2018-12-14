@@ -414,7 +414,7 @@ def twitter(input_folder_path, files_nb, max_tweets, query, language, extended=F
         str_extended = '_extended'
     else:
         str_extended = ''
-    fnames = [input_folder_path + '/twitter_server_' + str(i) + '__' + language + '_' + str(
+    fnames = [input_folder_path + '/twitter_server_1_' + str(i) + '__' + language + '_' + str(
         max_tweets) + '_' + query + str_extended + '.txt' for i in range(1, files_nb + 1)]
 
     text = []
@@ -640,13 +640,13 @@ if __name__ == '__main__':
 
     database = 'twitter'
     # language = 'fr'
-    # query = 'giletsjaunes'
+    # query = 'Macron'
     language = 'en'
-    query = 'yellowvest'
+    query = 'Trump'
     method = 'we'
     min_seq_length = 5
     max_seq_length = 20
-    files_nb = 1
+    files_nb = 3
     max_tweets = 2000
     extended = True
 

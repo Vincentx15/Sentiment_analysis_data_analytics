@@ -183,10 +183,7 @@ def diff_distributions(a, b, percentile=5):
     return integral_diff
 
 
-# a = np.random.randn((10000))+5
-# b = np.random.randn((10000))
-# c = diff_distributions(a, b)
-# print(c)
+
 
 
 def plot_twitter_with_query(fname1, fname2, mean_calibration):
@@ -260,5 +257,14 @@ if __name__ == '__main__':
     # plot_twitter_with_query('data/twitter/results/old_LSTM_we_fr.npy',
     #                         'data/twitter/results/old_giletsjaunes_LSTM_we_fr.npy', 3.49)
     # sns.distplot(np.load('data/predictions/twitter_LSTM_we_en_yellowvest_extended.npy'))
-    sns.distplot(np.load('data/predictions/twitter_LSTM_we_fr_giletsjaunes_extended.npy'))
-    plt.show
+
+    data_fr = np.load('data/predictions/twitter_LSTM_we_fr_Macron_extended.npy')-mean_fr
+    sns.distplot(data_fr)
+    print(np.mean(data_fr))
+
+    # data_en = np.load('data/predictions/twitter_LSTM_we_en_all_extended.npy') - mean_en
+    # sns.distplot(data_en)
+    # print(np.mean(data_en))
+    #
+    # plt.show
+    test_stable(data_fr,[0.001, 0.01, 0.1])

@@ -18,9 +18,9 @@ def complete_filename(file, query, language, max_tweets, extended):
     else:
         str_extended = ''
     if query == "*":
-        return 'data/twitter2/' + file + '_' + language + '_' + str(max_tweets) + '_' + 'all' + str_extended + '.txt'
+        return 'data/twitter/' + file + '_' + language + '_' + str(max_tweets) + '_' + 'all' + str_extended + '.txt'
     else:
-        return 'data/twitter2/' + file + '_' + language + '_' + str(max_tweets) + '_' + query + str_extended + '.txt'
+        return 'data/twitter/' + file + '_' + language + '_' + str(max_tweets) + '_' + query + str_extended + '.txt'
 
 
 def load_api(fname):
@@ -129,7 +129,7 @@ def handle_error(cursor):
 if __name__ == '__main__':
 
     # parameters
-    file = "twitter_server_2"  # No need to specify the folder or the file extension
+    file = "twitter_server_1"  # No need to specify the folder or the file extension
     max_tweets = 2000  # Max number of tweets
     min_age = 0  # Min age of the tweets in days (0 means most recent tweets)
     extended = True  # Whether or not to load extended tweets
@@ -139,16 +139,20 @@ if __name__ == '__main__':
 
     # Infinite loop, made to run on a remote server and load tweets in several .txt files
     cmpt = 0
-    while True:
+    while cmpt <= 3:
         cmpt += 1
         language = "fr"
-        query = "*"
+        # query = "*"
+        # query = "giletsjaunes"
+        query = "Macron"
         fname = complete_filename(file + '_' + str(cmpt) + '_', query, language, max_tweets, extended)
         tweets = search_tweets(api, query, language, max_tweets, min_age, extended)
         write_csv(fname, tweets, extended)
 
         language = "en"
-        query = "*"
+        # query = "*"
+        # query = "yellowvest"
+        query = "Trump"
         fname = complete_filename(file + '_' + str(cmpt) + '_', query, language, max_tweets, extended)
         tweets = search_tweets(api, query, language, max_tweets, min_age, extended)
         write_csv(fname, tweets, extended)

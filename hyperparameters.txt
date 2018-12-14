@@ -1,0 +1,21 @@
+The final architecture for the model was based on GRU units connected to a feed-forward neural network, and were tuned by Random Search using thefollowing parameters ranges. To implement this, we used keras.
+
+—  1 to 4 GRU cells (all but the last one returninga sequence) ;
+—  GRU cells’ output sizes are sampled from [1,2, 4, 8, 16, 32, 64] and are sorted in decreasingorder ;
+—  0 (in case the last GRU cell return a scalar) to3 feed-forward neural network layers ;
+—  neural network layers’ sizes are sampled from[2,  4,  8,  16,  32,  64]  and  sorted  in  decreasingorder (input of the first layer is made smallerthan the output of the GRU cells) except thelast layer’s size, which is 1 ;
+—  activations are chosen among relu, tanh, soft-max, elu, sigmoid, linear;
+—  the dropout rate is chosen between 0 and 0.5
+—  the  optimiser  is  chosen  between RMSprop,sgd, Adagrad, Adadelta, Adam
+
+The  best  results  were  obtained  with  the  following model.
+
+—  2 GRU cells ;
+—  output  size  of  the  GRU  cells  are  32  and  16 respectively
+—  activations of the GRU are elu and relu respectively ;
+—  2 layers of feed-forward neural network
+—  sizes of the layers are 8 and 1 respectively
+—  activations of the layers are elu and relu respectively
+—  a dropout of 0.3 is applied
+—  the loss is the mean squared error
+—  the optimizer is adam  
